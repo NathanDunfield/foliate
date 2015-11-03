@@ -25,6 +25,7 @@ import surface
 from sage.all import Graph
 
 # The vertices of the small triangular faces of the truncated tetrahedron 
+
 TruncatedSimplexCorners = {
     V0 : (E01, E02, E03),
     V1 : (E10, E13, E12),
