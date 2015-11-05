@@ -107,26 +107,7 @@ class LinkSphere(surface.Surface):
         G = self.edge_graph()
         return G.plot(layout='planar')
 
-    def prefoliation_subgraphs(self, signs):
-        pos, neg = [], []
-        for vert in self.vertices:
-            i = vert.index
-            s = signs[abs(i) - 1]
-            if s*i > 0:
-                pos.append(i)
-            else:
-                neg.append(i)
-        assert {abs(p) for p in pos} == {abs(n) for n in neg}
-        G = self.edge_graph()
-        return G.subgraph(vertices=pos), G.subgraph(vertices=neg)
-
-    def gives_foliation(self, signs):
-        pos, neg = self.prefoliation_subgraphs(signs)
-        return pos.is_connected() and neg.is_connected()
-        
 if __name__ == '__main__':
-    import util, orient
-    M = util.closed_from_file('test.tri')
-    S = LinkSphere(M)
-    prefols = orient.cycle_free_orientations(M)
+    import doctest
+    doctest.testmod()
     

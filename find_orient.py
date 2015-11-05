@@ -49,19 +49,16 @@ def all_solutions(solver):
 
     Note: Modifies the solver inplace.
     """
-    solutions = []
     while True:
         solution = solver()
         if solution == False:
-            break
+            return
         else:
-            solutions.append(solution)
+            yield solution
             # Add a clause which excludes the solution just found.
             clause = [-i if s else i for i, s in enumerate(solution)]
             solver.add_clause(tuple(clause[1:]))
 
-    return solutions
-            
 def cycle_free_orientations(triangulation):
     """
     Returns all orientations of the one-skeleton where no triangular
@@ -69,10 +66,10 @@ def cycle_free_orientations(triangulation):
     default orientation as a sequence of 1's and -1's.
 
     >>> M = closed_from_isosig('jLvMLQQbfefgihhiixiptvvvgof')
-    >>> cycle_free_orientations(M)
+    >>> list(cycle_free_orientations(M))
     []
     >>> M = closed_from_isosig('jLvLQAQbffghghiiieuaiikktuu')
-    >>> len(cycle_free_orientations(M))
+    >>> len(list(cycle_free_orientations(M)))
     10
     """
     solver = CryptoMiniSat()
@@ -81,8 +78,8 @@ def cycle_free_orientations(triangulation):
     # By symmetry, we might as well assume the first edge is
     # positively oriented
     solver.add_clause((1,))
-    solutions = all_solutions(solver)
-    return [[1 if s else -1 for s in sol[1:]] for sol in solutions]
+    for sol in all_solutions(solver):
+        yield [1 if s else -1 for s in sol[1:]]
     
 if __name__ == '__main__':
     import doctest
