@@ -1,6 +1,9 @@
 import find_orient, link
-from snappy.snap.t3mlite.simplex import Head, Tail, ZeroSubsimplices, OneSubsimplices
-from util import closed_from_isosig
+from snappy.snap.t3mlite.simplex import (Head, Tail,
+                                         ZeroSubsimplices, OneSubsimplices,
+                                         RightFace, LeftFace)
+from util import closed_from_isosig, closed_from_file
+from sage.all import Graph
 
 class EdgeOrientation(object):
     """
@@ -49,6 +52,22 @@ class EdgeOrientation(object):
         pos, neg = self.link_subgraphs()
         return pos.is_connected() and neg.is_connected()
 
+    def local_structure(self, tet, vertex):
+        """
+        Returns the number of "out" and "in" arrows from the given vertex.
+        """
+        a = vertex
+        signs = []
+        for b in ZeroSubsimplices:
+            if b != a:
+                e = tet.Class[a|b]
+                signs.append(self(e) * e.orientation_with_respect_to(tet, a, b))
+        return signs.count(1), signs.count(-1)
+
+    def local_structure_edge(self, tet, edge):
+        return sorted([self.local_structure(tet, Head[edge]),
+                       self.local_structure(tet, Tail[edge])])
+
     def is_long(self, tet_or_corner, edge=None):
         if edge is None:  # Called with a corner
             tet = tet_or_corner.Tetrahedron
@@ -57,12 +76,7 @@ class EdgeOrientation(object):
             tet = tet_or_corner
 
         for a in [Head[edge], Tail[edge]]:
-            adjacent_signs = set()
-            for b in ZeroSubsimplices:
-                if b != a:
-                    e = tet.Class[a|b]
-                    adjacent_signs.add(self(e) * e.orientation_with_respect_to(tet, a, b))
-            if len(adjacent_signs) != 1:
+            if 0 not in self.local_structure(tet, a):
                 return False
         return True
                         
@@ -78,11 +92,30 @@ class EdgeOrientation(object):
                 return True
         return False
 
+    def num_sutures(self):
+        M = self.mcomplex
+        G = Graph()
+        for tet in M.Tetrahedra:
+            for e in OneSubsimplices:
+                if self.local_structure_edge(tet, e) in [[(0,3), (1,2)], [(2,1), (3,0)]]:
+                    i = tet.Class[RightFace[e]].Index
+                    j = tet.Class[LeftFace[e]].Index
+                    G.add_edge( (i,j) )
+        assert G.num_verts() == len(M.Faces)
+        assert G.num_edges() == len(M.Faces)
+        return len(G.connected_components())
+
     def gives_foliation(self):
         """
         WARNING: Not yet proved this works!
         """
-        return self.link_compatible_with_foliation() and not self.has_super_long_edge()
+        if self.has_super_long_edge():
+            return False
+
+        ans1 = self.link_compatible_with_foliation()
+        ans2 = self.num_sutures() == 1
+        assert ans1 == ans2
+        return ans1
     
 def edge_orientations(mcomplex):
     link_sphere = link.LinkSphere(mcomplex)
@@ -92,4 +125,10 @@ def edge_orientations(mcomplex):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    N = closed_from_isosig('jLLvQPQcdfhghigiihshhgfifme')
+    #N = closed_from_isosig('jLLvQPQcdfhghigiihshhgfifme')
+    #orients = edge_orientations(N)
+    #[eo.num_sutures() for eo in orients]
+    N = closed_from_file('/tmp/bad.tri')
+    L = link.LinkSphere(N)
+    eo = EdgeOrientation(N, L, [1, 1, -1, 1, -1, 1, -1, -1, 1, 1, 1])
+
