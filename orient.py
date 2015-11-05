@@ -8,6 +8,7 @@ import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
 from sage.sat.solvers import CryptoMiniSat
 from sage.all import infinity
+from util import closed_from_isosig
 
 # -------- t3m preliminaries --------
 
@@ -28,11 +29,6 @@ from sage.all import infinity
 
 VerticesOfFace = { F0 : (V1, V3, V2), F1 : (V0, V2, V3),
                    F2 : (V0, V3, V1), F3 : (V0, V1, V2) }
-
-def load_closed(filename):
-    data = t3m.files.read_SnapPea_file(filename)
-    tets = t3m.mcomplex.tets_from_data(data)
-    return t3m.Mcomplex(tets)
 
 def oriented_edges_around_faces(triangulation):
     ans = []
@@ -71,6 +67,13 @@ def cycle_free_orientations(triangulation):
     Returns all orientations of the one-skeleton where no triangular
     face is a directed cycle.  Orientations are given relative to the
     default orientation as a sequence of 1's and -1's.
+
+    >>> M = closed_from_isosig('jLvMLQQbfefgihhiixiptvvvgof')
+    >>> cycle_free_orientations(M)
+    []
+    >>> M = closed_from_isosig('jLvLQAQbffghghiiieuaiikktuu')
+    >>> len(cycle_free_orientations(M))
+    10
     """
     solver = CryptoMiniSat()
     for face_data in oriented_edges_around_faces(triangulation):
@@ -81,3 +84,8 @@ def cycle_free_orientations(triangulation):
     solutions = all_solutions(solver)
     return [[1 if s else -1 for s in sol[1:]] for sol in solutions]
     
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+
+        

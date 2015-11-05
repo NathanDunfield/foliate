@@ -22,7 +22,7 @@ anticlockwise when viewed from outside.
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
 import surface
-from sage.all import Graph
+from sage.all import Graph, cached_method
 
 # The vertices of the small triangular faces of the truncated tetrahedron 
 
@@ -97,6 +97,7 @@ class LinkSphere(surface.Surface):
                 tri = tet.CuspCorners[v]
                 tri.vertices[i].index = label
 
+    @cached_method
     def edge_graph(self):
         G = Graph()
         G.add_edges([[v.index for v in e.vertices] for e in self.edges])
@@ -124,8 +125,8 @@ class LinkSphere(surface.Surface):
         return pos.is_connected() and neg.is_connected()
         
 if __name__ == '__main__':
-    import orient
-    M = orient.load_closed('test.tri')
+    import util, orient
+    M = util.closed_from_file('test.tri')
     S = LinkSphere(M)
     prefols = orient.cycle_free_orientations(M)
     

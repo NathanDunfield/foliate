@@ -22,5 +22,11 @@ def make_file():
         file.write('"%s",%s\n' % (M, has_compatible_foliation(M)))
         file.flush()
 
+def disorder(snappy_manifold):
+    pass
+    
 
-
+def repeatibility():
+    for M in snappy.OrientableClosedCensus[:100]:
+        print M, {M.filled_triangulation().triangulation_isosig() for i in range(100)}
+            
