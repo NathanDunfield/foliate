@@ -2,17 +2,26 @@ import edge_orient
 import snappy
 import snappy.snap.t3mlite as t3m
 import pandas as pd
+import util
 
 def has_compatible_foliation(snappy_manifold):
     ans = first_foliation(snappy_manifold)
     return ans is not None
 
-def first_foliation(snappy_manifold):
-    T = t3m.Mcomplex(snappy_manifold.filled_triangulation())
-    if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
-        for eo in edge_orient.edge_orientations(T):
-            if eo.gives_foliation():
-                return eo
+def first_foliation_mcomplex(mcomplex):
+    for eo in edge_orient.edge_orientations(mcomplex):
+        if eo.gives_foliation():
+            return eo
+    
+def first_foliation(snappy_manifold, max_triangulations=10):
+    for iso in util.closed_isosigs(snappy_manifold)[:max_triangulations]:
+        T = util.closed_from_isosig(iso)
+        print iso
+        #T = t3m.Mcomplex(snappy_manifold.filled_triangulation())
+        if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
+            for eo in edge_orient.edge_orientations(T):
+                if eo.gives_foliation():
+                    return eo
 
 def make_file():
     file = open('/tmp/foliation_info.csv', 'w')
