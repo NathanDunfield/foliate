@@ -15,19 +15,25 @@ def first_foliation_mcomplex(mcomplex):
     
 def first_foliation(snappy_manifold, max_triangulations=10):
     for iso in util.closed_isosigs(snappy_manifold)[:max_triangulations]:
-        T = util.closed_from_isosig(iso)
         print iso
-        #T = t3m.Mcomplex(snappy_manifold.filled_triangulation())
+        T = t3m.Mcomplex(iso)
+        T.name = iso
         if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
-            for eo in edge_orient.edge_orientations(T):
+            orient = list(edge_orient.edge_orientations(T))
+            print len(orient)
+            for eo in orient:
                 if eo.gives_foliation():
                     return eo
 
 def make_file():
     file = open('/tmp/foliation_info.csv', 'w')
-    file.write('name,known_fol\n')
+    file.write('name,taut,good_tri\n')
     for M in snappy.OrientableClosedCensus:
-        file.write('"%s",%s\n' % (M, has_compatible_foliation(M)))
+        fol = first_foliation(M, 10)
+        if fol is None:
+            file.write('"%s",0,\n' % M)
+        else:
+            file.write('"%s",1,"%s"\n' % (M, fol.mcomplex.name))
         file.flush()
 
 def disorder(snappy_manifold):

@@ -8,7 +8,6 @@ import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
 from sage.sat.solvers import CryptoMiniSat
 from sage.all import infinity
-from util import closed_from_isosig
 
 # -------- t3m preliminaries --------
 
@@ -65,10 +64,10 @@ def cycle_free_orientations(triangulation):
     face is a directed cycle.  Orientations are given relative to the
     default orientation as a sequence of 1's and -1's.
 
-    >>> M = closed_from_isosig('jLvMLQQbfefgihhiixiptvvvgof')
+    >>> M = t3m.Mcomplex('jLvMLQQbfefgihhiixiptvvvgof')
     >>> list(cycle_free_orientations(M))
     []
-    >>> M = closed_from_isosig('jLvLQAQbffghghiiieuaiikktuu')
+    >>> M = t3m.Mcomplex('jLvLQAQbffghghiiieuaiikktuu')
     >>> len(list(cycle_free_orientations(M)))
     10
     """

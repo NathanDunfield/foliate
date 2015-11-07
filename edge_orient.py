@@ -1,8 +1,8 @@
 import find_orient, link
+import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
                                          ZeroSubsimplices, OneSubsimplices,
                                          RightFace, LeftFace)
-from util import closed_from_isosig, closed_from_file
 from sage.all import Graph
 
 class EdgeOrientation(object):
@@ -10,7 +10,7 @@ class EdgeOrientation(object):
     An orientation on the edges of a triangulation of a closed
     3-manifold where no face is a directed cycle.
 
-    >>> N = closed_from_isosig('jLLvQPQcdfhghigiihshhgfifme')
+    >>> N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
     >>> orients = edge_orientations(N)
     >>> good = [eo for eo in orients if eo.link_compatible_with_foliation()]
     >>> len(good)
@@ -19,7 +19,7 @@ class EdgeOrientation(object):
     True
     >>> tet = N.Tetrahedra[3]
     >>> [eo.is_long(tet, e) for e in OneSubsimplices]
-    [False, False, False, False, True, False]
+    [False, False, True, False, False, False]
     >>> eo.has_super_long_edge()
     False
     >>> eo.gives_foliation()
@@ -125,10 +125,7 @@ def edge_orientations(mcomplex):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    #N = closed_from_isosig('jLLvQPQcdfhghigiihshhgfifme')
+    #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
     #orients = edge_orientations(N)
     #[eo.num_sutures() for eo in orients]
-    N = closed_from_file('/tmp/bad.tri')
-    L = link.LinkSphere(N)
-    eo = EdgeOrientation(N, L, [1, 1, -1, 1, -1, 1, -1, -1, 1, 1, 1])
 
