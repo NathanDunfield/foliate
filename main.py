@@ -25,7 +25,23 @@ def first_foliation(snappy_manifold, max_triangulations=10):
                 if eo.gives_foliation():
                     return eo
 
-def make_file():
+def nonorderable(snappy_manifold, max_triangulations=10):
+    for iso in util.closed_isosigs(snappy_manifold)[:max_triangulations]:
+        print iso
+        T = t3m.Mcomplex(iso)
+        T.name = iso
+        if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
+            orients = edge_orient.edge_orientations(T)
+            found = False
+            for eo in orients:
+                found = True
+                break
+            if not found:
+                return iso
+                    
+            
+
+def make_fol_file():
     file = open('/tmp/foliation_info.csv', 'w')
     file.write('name,taut,good_tri\n')
     for M in snappy.OrientableClosedCensus:
@@ -36,15 +52,25 @@ def make_file():
             file.write('"%s",1,"%s"\n' % (M, fol.mcomplex.name))
         file.flush()
 
-def disorder(snappy_manifold):
-    pass
+def make_disorder_file():
+    file = open('/tmp/orderable_info.csv', 'w')
+    file.write('name,orderable,good_tri\n')
+    for M in snappy.OrientableClosedCensus:
+        ans = nonorderable(M, 100)
+        if ans is None:
+            file.write('"%s",0,\n' % M)
+        else:
+            file.write('"%s",-1,"%s"\n' % (M, ans))
+        file.flush()
+
 
 def compare_data():
     dh = pd.read_csv('/Users/dunfield/h/derived_data/combined_data_2014_3_12.csv')
-    df = pd.read_csv('/tmp/foliation_info.csv')
-    da = dh.merge(df, on='name')[['name', 'L_space', 'known_fol']]
-    bad = da[(da.L_space==1)&(da.known_fol)]
-    return da, bad
+    df = pd.read_csv('foliation_info.csv')
+    da = dh.merge(df, on='name')[['name', 'L_space', 'taut']]
+    bad = da[(da.L_space==1)&(da.taut)]
+    assert len(bad) == 0
+    return da
 
 def repeatibility():
     for M in snappy.OrientableClosedCensus[:100]:
