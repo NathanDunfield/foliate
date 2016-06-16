@@ -29,8 +29,8 @@ def opposite_vertex_from_edge_function( vertices ):
 opposite_vertex_from_edge_dict = {(i,j):opposite_vertex_from_edge_function((i,j))
                                   for i in range(3) for j in range(3) if i != j}
 
-
 oriented_edges_of_triangle = [ (1,2), (2,0), (0, 1)]
+
 
 class Edge(object):
     """

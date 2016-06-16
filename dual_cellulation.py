@@ -2,8 +2,9 @@
 The dual cellulation to a triangulation of an oriented surface.  
 """
 
-from snappy.snap.t3mlite import Mcomplex
-from link import LinkSurface
+import snappy.snap.t3mlite as t3m
+
+import link
 import surface
 import snappy
 from sage.all import (ZZ, matrix, vector, ChainComplex, cached_method)
@@ -83,13 +84,13 @@ class DualCellulation(object):
                 
     def euler(self):
         """
-        >>> N = Mcomplex('o9_12345')
-        >>> D = DualCellulation(LinkSurface(N))
+        >>> N = t3m.Mcomplex('o9_12345')
+        >>> D = DualCellulation(link.LinkSurface(N))
         >>> D.euler()
         0
         
-        >>> N = Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
-        >>> D = DualCellulation(LinkSurface(N))
+        >>> N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
+        >>> D = DualCellulation(link.LinkSurface(N))
         >>> D.euler()
         2
         """
@@ -142,30 +143,69 @@ class DualCellulation(object):
         CD = self.chain_complex()
         CT = T.chain_complex()
         assert CD.homology() == CT.homology()
+    
 
-def test_homologically(n=100, progress=True):
+class OneCycle(object):
     """
-    >>> test_homologically(5, False)
+    A cycle on the 1-skeleton of a DualCellulation.
     """
-    for i in range(n):
-        M = snappy.HTLinkExteriors.random()
-        N = Mcomplex(M)
-        C = LinkSurface(N)
-        C.index()   # So that homology works
-        D = DualCellulation(C)
-        D.homology_test()
-        if progress:
-            H = D.chain_complex().homology()
-            print(M.name() + ' ' + repr(H))
 
+    def __init__(self, cellulation, weights):
+        self.cellulation, self.weights = cellulation, weights
+        assert sorted(edge.index for edge in cellulation.edges) == range(len(weights))
+        assert cellulation.B1() * vector(weights) == 0
+
+def peripheral_curve_from_snappy(dual_cellulation, snappy_data):
+    D = dual_cellulation
+    T = D.dual_triangulation
+    M = T.parent_triangulation
+    data = snappy_data
+    weights = len(D.edges)*[0]
+    for tet_index, tet in enumerate(M.Tetrahedra):
+        for vert_index, V in enumerate(t3m.ZeroSubsimplices):
+            triangle = tet.CuspCorners[V]
+            sides = triangle.oriented_sides()
+            for tri_edge_index, tet_edge in enumerate(link.TruncatedSimplexCorners[V]):
+                tet_face_index = t3m.ZeroSubsimplices.index(tet_edge ^ V)
+                side = sides[tri_edge_index]
+                global_edge = side.edge()
+                if global_edge.orientation_with_respect_to(side) > 0:
+                    dual_edge = D.from_original[global_edge]
+                    weight = data[tet_index][4*vert_index + tet_face_index]
+                    weights[dual_edge.index] = -weight
+
+    # Sanity check
+    total_raw_weights = sum([sum(abs(x) for x in row) for row in data])
+    assert 2*sum(abs(w) for w in weights) == total_raw_weights
+    return OneSkeletonCurves(D, weights)
                 
 
+        
+def peripheral_curve_package(snappy_manifold):
+    M = snappy_manifold
+    N = t3m.Mcomplex(M)
+    C = link.LinkSurface(N)
+    D = DualCellulation(C)
+    data = M._get_peripheral_curve_data()
+    meridian = [data[i] for i in range(0, len(data), 4)]
+    longitude = [data[i] for i in range(2, len(data), 4)]
+    return peripheral_curve_from_snappy(D, meridian), peripheral_curve_from_snappy(D, longitude)
+
+def test_peripheral_curves(n=100, progress=True):
+    """
+    asdklfj >>> test_peripheral_curves(5, False)
+    """
+    census = snappy.OrientableCuspedCensus(cusps=1)
+    for i in range(n):
+        M = census.random()
+        print M.name()
+        peripheral_curve_package(M)
           
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    N = Mcomplex('s000')
-    C = LinkSurface(N)
+    M = snappy.Manifold('m004')
+    N = t3m.Mcomplex(M)
+    C = link.LinkSurface(N)
     C.index()
     D = DualCellulation(C)
-    D.homology_test()
