@@ -36,7 +36,7 @@ def closed_isosigs(snappy_manifold, trys=20):
         for i in range(trys):
             T = N.filled_triangulation()
             if T._num_fake_cusps() == 1:
-                ans.add((T.num_tetrahedra(), T.triangulation_isosig()))
+                ans.add((T.num_tetrahedra(), T.triangulation_isosig(decorated=False)))
             N.randomize()
 
     return [iso for n, iso in sorted(ans)]

@@ -249,8 +249,10 @@ class Surface:
         """
         The matrix describing the boundary map C_1 -> C_0
         """
-
         V, E = len(self.vertices), len(self.edges)
+        assert range(V) == sorted(v.index for v in self.vertices)
+        assert range(E) == sorted(e.index for e in self.edges)
+        
         D = matrix(ZZ, V, E, sparse=True)
         for e in self.edges:
             v_init = e.vertices[0].index
@@ -267,6 +269,8 @@ class Surface:
         """
         
         E, F = len(self.edges), len(self.triangles)
+        assert range(E) == sorted(e.index for e in self.edges)
+        assert range(F) == sorted(v.index for v in self.triangles)
         D = matrix(ZZ, E, F, sparse=True)
         for T in self.triangles:
             for S in T.oriented_sides():

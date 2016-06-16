@@ -1,5 +1,5 @@
 """
-Studying the vertex links of triangulations of closed 3-manifolds. 
+Studying the vertex links of triangulations of 3-manifolds. 
 
 Recall that in t3m and SnapPea, a 3-simplex is oriented like this:
 
@@ -43,13 +43,10 @@ VerticesOfFace = { F0 : (V1, V2, V3), F1 : (V0, V3, V2),
 def cusp_corner_label(v, w):
     return TruncatedSimplexCorners[v].index( v | w )
 
-class LinkSphere(surface.Surface):
+class LinkSurface(surface.Surface):
     def __init__(self, t3m_triangulation):
         self.parent_triangulation = t3m_triangulation
         N = t3m_triangulation
-
-        assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0
-        
         triangles = []
         for T in N.Tetrahedra:
             new_tris = [surface.Triangle() for i in range(4)]
@@ -102,6 +99,13 @@ class LinkSphere(surface.Surface):
         G = Graph()
         G.add_edges([[v.index for v in e.vertices] for e in self.edges])
         return G
+
+
+class LinkSphere(LinkSurface):
+    def __init__(self, t3m_triangulation):
+         N = t3m_triangulation
+         assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0
+         LinkSurface.__init__(self, N)
             
     def draw(self):
         G = self.edge_graph()

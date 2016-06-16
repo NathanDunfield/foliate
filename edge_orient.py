@@ -27,7 +27,7 @@ class EdgeOrientation(object):
     """
     def __init__(self, mcomplex, link_sphere, signs):
         self.mcomplex, self.signs = mcomplex, signs
-        self.link_sphere = link_sphere
+        self.vertex_link = link_sphere
 
     def __call__(self, edge):
         """
@@ -37,7 +37,7 @@ class EdgeOrientation(object):
 
     def link_subgraphs(self):
         pos, neg = [], []
-        for vert in self.link_sphere.vertices:
+        for vert in self.vertex_link.vertices:
             i = vert.index
             s = self.signs[abs(i) - 1]
             if s*i > 0:
@@ -45,7 +45,7 @@ class EdgeOrientation(object):
             else:
                 neg.append(i)
         assert {abs(p) for p in pos} == {abs(n) for n in neg}
-        G = self.link_sphere.edge_graph()
+        G = self.vertex_link.edge_graph()
         return G.subgraph(vertices=pos), G.subgraph(vertices=neg)
 
     def link_compatible_with_foliation(self):
@@ -102,13 +102,9 @@ class EdgeOrientation(object):
                     j = tet.Class[LeftFace[e]].Index
                     G.add_edge( (i,j) )
         assert G.num_verts() == len(M.Faces)
-        assert G.num_edges() == len(M.Faces)
         return len(G.connected_components())
 
     def gives_foliation(self):
-        """
-        WARNING: Not yet proved this works!
-        """
         if self.has_super_long_edge():
             return False
 
@@ -118,14 +114,35 @@ class EdgeOrientation(object):
         return ans1
     
 def edge_orientations(mcomplex):
-    link_sphere = link.LinkSphere(mcomplex)
-    for signs in find_orient.cycle_free_orientations(mcomplex):
-        yield EdgeOrientation(mcomplex, link_sphere, signs)
+    N = mcomplex
+    if len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0:
+        vertex_link = link.LinkSphere(N)
+    else:
+        vertex_link = link.LinkSurface(N)
+    for signs in find_orient.cycle_free_orientations(N):
+        yield EdgeOrientation(N, vertex_link, signs)
 
+
+class IdealEdgeOrientation(EdgeOrientation):
+    """
+    An orientation on the edges of an ideal triangulation of a
+    1-cusped 3-manifold where no face is a directed cycle.
+
+    >>> N = t3m.Mcomplex('v1234')
+    >>> orients = edge_orientations(N)
+    >>> [eo.num_sutures() for eo in orients]
+    [2, 2]
+    """
+    
+    
+        
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
     #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
     #orients = edge_orientations(N)
     #[eo.num_sutures() for eo in orients]
-
+    N = t3m.Mcomplex('m004')
+    orients = edge_orientations(N)
+    eo = next(orients)
+    C = eo.vertex_link
