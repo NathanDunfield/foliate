@@ -7,7 +7,7 @@ import snappy.snap.t3mlite as t3m
 import link
 import surface
 import snappy
-from sage.all import (ZZ, matrix, vector, ChainComplex, cached_method)
+from sage.all import (ZZ, matrix, vector, ChainComplex, cached_method, Graph)
 
 class DualCell(object):
     """
@@ -159,6 +159,37 @@ class OneCycle(object):
         self.cellulation, self.weights = cellulation, weights
         assert sorted(edge.index for edge in cellulation.edges) == range(len(weights))
         assert cellulation.B1() * vector(weights) == 0
+
+    def components(self):
+        """
+        Returns a list of the connected components of the multicurve
+        corresponding to the 1-cycle, each given as a OneCycle.
+
+        Assumes for simplicity that the weights are at most one and
+        the support of the cycle is a simple multicurve.
+        """
+        assert all(abs(w) <= 1 for w in self.weights)
+        D = self.cellulation
+        G = Graph(multiedges=True)
+        for edge in D.edges:
+            if self.weights[edge.index] != 0:
+                i, j = [v.index for v in edge.vertices]
+                G.add_edge(i, j, edge.index)
+
+        assert G.num_verts() == G.num_edges()
+
+        ans = []
+        for H in G.connected_components_subgraphs():
+            weights = len(self.weights) * [0]
+            for i in H.edge_labels():
+                weights[i] = self.weights[i]
+            ans.append(OneCycle(self.cellulation, weights))
+        return ans
+            
+                
+
+        
+        
 
 class OneCocycle(object):
     """
