@@ -250,14 +250,16 @@ class Surface:
         The matrix describing the boundary map C_1 -> C_0
         """
         V, E = len(self.vertices), len(self.edges)
-        assert range(V) == sorted(v.index for v in self.vertices)
+        vert_indices = sorted((v.index, v) for v in self.vertices)
+        vertex_to_row = {v:i for i, (j, v) in enumerate(vert_indices)}
+        assert range(V) == sorted(vertex_to_row.values())
         assert range(E) == sorted(e.index for e in self.edges)
         
         D = matrix(ZZ, V, E, sparse=True)
         for e in self.edges:
-            v_init = e.vertices[0].index
-            v_term = e.vertices[1].index
-            D[v_term, e.index] += 1
+            v_init = vertex_to_row[e.vertices[0]]
+            v_term = vertex_to_row[e.vertices[1]]
+            D[v_term, e.index]+= 1
             D[v_init, e.index] += -1
 
         return D

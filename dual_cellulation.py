@@ -133,7 +133,12 @@ class DualCellulation(object):
 
     @cached_method
     def chain_complex(self):
-         return ChainComplex( {1:self.B1(), 2:self.B2()} , degree=-1 )
+         return ChainComplex({1:self.B1(), 2:self.B2()}, degree=-1)
+
+    def integral_cohomology_basis(self, dimension=1):
+        assert dimension == 1
+        return [OneCocycle(self, list(c.weights))
+                for c in self.dual_triangulation.integral_homology_basis(dimension)]
 
     def homology_test(self):
         T = self.dual_triangulation
@@ -154,6 +159,20 @@ class OneCycle(object):
         self.cellulation, self.weights = cellulation, weights
         assert sorted(edge.index for edge in cellulation.edges) == range(len(weights))
         assert cellulation.B1() * vector(weights) == 0
+
+class OneCocycle(object):
+    """
+    A cocycle on the 1-skeleton of a DualCellulation.
+    """
+
+    def __init__(self, cellulation, weights):
+        self.cellulation, self.weights = cellulation, weights
+        assert sorted(edge.index for edge in cellulation.edges) == range(len(weights))
+        assert cellulation.B2().transpose() * vector(weights) == 0
+
+    def __call__(self, other):
+        if isinstance(other, OneCycle):
+            return sum(a*b for a, b in zip(self.weights, other.weights))
 
 def peripheral_curve_from_snappy(dual_cellulation, snappy_data):
     D = dual_cellulation
@@ -177,35 +196,52 @@ def peripheral_curve_from_snappy(dual_cellulation, snappy_data):
     # Sanity check
     total_raw_weights = sum([sum(abs(x) for x in row) for row in data])
     assert 2*sum(abs(w) for w in weights) == total_raw_weights
-    return OneSkeletonCurves(D, weights)
+    return OneCycle(D, weights)
                 
-
-        
 def peripheral_curve_package(snappy_manifold):
+    """
+    Given a 1-cusped snappy_manifold M, this function returns
+
+    1. A t3m MComplex of M, and
+    
+    2. the induced cusp triangulation, and
+
+    3. the dual to the cusp triangulation, and
+
+    4. two 1-cocycles on the dual cellulation which are
+    *algebraically* dual to the peripheral framming of M.
+    """
     M = snappy_manifold
+    assert M.num_cusps() == 1
     N = t3m.Mcomplex(M)
     C = link.LinkSurface(N)
     D = DualCellulation(C)
     data = M._get_peripheral_curve_data()
-    meridian = [data[i] for i in range(0, len(data), 4)]
-    longitude = [data[i] for i in range(2, len(data), 4)]
-    return peripheral_curve_from_snappy(D, meridian), peripheral_curve_from_snappy(D, longitude)
+    meridian = peripheral_curve_from_snappy(D, [data[i] for i in range(0, len(data), 4)])
+    longitude = peripheral_curve_from_snappy(D, [data[i] for i in range(2, len(data), 4)])
+    alpha, beta = D.integral_cohomology_basis()
+    A = matrix([[alpha(meridian), beta(meridian)], [alpha(longitude), beta(longitude)]])
+    assert abs(A.det()) == 1
+    Ainv = A.inverse().change_ring(ZZ)
+    B = Ainv.transpose()*matrix(ZZ, [alpha.weights, beta.weights])
+    mstar, lstar = OneCocycle(D, list(B[0])), OneCocycle(D, list(B[1]))
+    AA = matrix([[mstar(meridian), lstar(meridian)], [mstar(longitude), lstar(longitude)]])
+    assert AA == 1
+    return N, C, D, (mstar, lstar)
 
 def test_peripheral_curves(n=100, progress=True):
     """
-    asdklfj >>> test_peripheral_curves(5, False)
+    >>> test_peripheral_curves(5, False)
     """
     census = snappy.OrientableCuspedCensus(cusps=1)
     for i in range(n):
         M = census.random()
-        print M.name()
+        if progress:
+            print(M.name())
         peripheral_curve_package(M)
           
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
     M = snappy.Manifold('m004')
-    N = t3m.Mcomplex(M)
-    C = link.LinkSurface(N)
-    C.index()
-    D = DualCellulation(C)
+    ans = peripheral_curve_package(M)
