@@ -1,4 +1,4 @@
-import find_orient, link, dual_cellulation, surface, peripheral
+import find_orient, link, dual_cellulation, surface, peripheral, util
 import snappy
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
@@ -239,16 +239,32 @@ def degeneracy_slopes(manifold):
         if eo.gives_foliation():
             degeneracy_slopes.append(eo.degeneracy_slope())
     return sorted(set(degeneracy_slopes))
-    
 
-def test_cusped(n=100, progress=True):
+def degeneracy_slopes_with_search(manifold, tries=1000):
     """
-    >>> test_cusped(5, False)
+    >>> degeneracy_slopes_with_search('m004', tries=0)
+    ([(1, 0)], ['cPcbbbiht_BaCB'])
+    """
+    manifold = snappy.Triangulation(manifold)
+    slopes, triangulations = list(), list()
+    for M in util.cusped_triangulations(manifold, tries):
+        M = peripheral.Triangulation(M)
+        for eo in edge_orientations(M):
+            if eo.gives_foliation():
+                slope = eo.degeneracy_slope()
+                if slope not in slopes:
+                    slopes.append(slope)
+                    triangulations.append(M.triangulation_isosig())
+    return slopes, triangulations
+    
+def test_cusped(n=100, tries=1000, progress=True):
+    """
+    >>> test_cusped(5, 10, False)
     """
     census = snappy.OrientableCuspedCensus(cusps=1)
     for i in range(n):
         M = census.random()
-        ans = degeneracy_slopes(M)
+        ans =  degeneracy_slopes_with_search(M, tries)
         if progress:
             print(M.name() + ' ' + repr(ans))
 
