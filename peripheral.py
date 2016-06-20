@@ -2,7 +2,7 @@ import snappy
 import snappy.snap.t3mlite as t3m
 import link
 import dual_cellulation
-from sage.all import matrix, ZZ
+from sage.all import matrix, vector, ZZ
 
 def peripheral_curve_from_snappy(dual_cell, snappy_data):
     D = dual_cell
@@ -84,6 +84,9 @@ class Triangulation(snappy.Triangulation):
             self.cusp_dual_cellulation = D = data[2]
             D.meridian_star = data[3][0]
             D.longitude_star = data[3][1]
+            def slope(onecycle):
+                return vector([D.meridian_star(onecycle), D.longitude_star(onecycle)])
+            D.slope = slope
             
 def test_peripheral_curves(n=100, progress=True):
     """

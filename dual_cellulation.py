@@ -178,7 +178,7 @@ class OneCycle(object):
                 weights[i] = self.weights[i]
             ans.append(OneCycle(self.cellulation, weights))
         return ans
-            
+
 class OneCocycle(object):
     """
     A cocycle on the 1-skeleton of a DualCellulation.

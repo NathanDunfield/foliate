@@ -4,7 +4,7 @@ import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
                                          ZeroSubsimplices, OneSubsimplices,
                                          RightFace, LeftFace)
-from sage.all import Graph
+from sage.all import Graph, cached_method, vector
 
 class EdgeOrientation(object):
     """
@@ -132,24 +132,32 @@ class IdealEdgeOrientation(EdgeOrientation):
     >>> orients = edge_orientations(N)
     >>> [eo.num_sutures() for eo in orients]
     [2, 2]
+    >>> N = peripheral.Triangulation('m016')
+    >>> list(edge_orientations(N))
+    []
+
+    In favorable circumstances, the induced branched surface is
+    laminar.  In this case, every Dehn filling except along the
+    degeneracy slope gives a manifold with a co-orientable taut
+    foliation.
     """
     def __init__(self, tri_with_peripheral, signs):
-        T = tri_with_peripheral
+        self.triangulation = T = tri_with_peripheral
         self.mcomplex, self.signs = T.mcomplex, signs
         self.vertex_link = T.cusp_triangulation
         self.link_dual_cellulation = T.cusp_dual_cellulation
         assert len(self.mcomplex.Vertices) == 1
         assert self.mcomplex.Vertices[0].link_genus() == 1
         self._add_link_vertex_signs()
-        
+
     def sutures(self):
         """
         Returns a list of cycles on the 1-skeleton of the dual cellulation
         of the vertex link, each representing one of the sutures
         induced by the corresponding branched surface.
 
-        >>> N = peripheral.Triangulation('m015')
-        >>> orients = edge_orientations(N)
+        >>> M = peripheral.Triangulation('m015')
+        >>> orients = edge_orientations(M)
         >>> len([eo.sutures() for eo in orients])
         2
         """
@@ -174,9 +182,35 @@ class IdealEdgeOrientation(EdgeOrientation):
                 weights[edge.index] = sign
         return dual_cellulation.OneCycle(D, weights).components()
                 
-
     def link_compatible_with_foliation(self):
-        pass
+        sutures = self.sutures()
+        assert len(sutures) % 2 == 0
+        D = self.link_dual_cellulation
+        return all(D.slope(suture) != 0 for suture in sutures)
+
+    @cached_method
+    def gives_foliation(self):
+        if self.has_super_long_edge():
+            return False
+
+        link_ok = self.link_compatible_with_foliation()
+        return link_ok
+
+    def degeneracy_slope(self):
+        """
+        >>> M = peripheral.Triangulation('m004')
+        >>> orients = edge_orientations(M)
+        >>> [eo.degeneracy_slope() for eo in orients]
+        [(1, 0), (1, 0)]
+        """
+        assert self.gives_foliation()
+        suture = self.sutures()[0]
+        a, b = self.link_dual_cellulation.slope(suture)
+        if a*b == 0:
+            a, b = abs(a), abs(b)
+        elif b < 0:
+            a, b = -a, -b
+        return (a, b) 
 
 def edge_orientations(manifold):
     if isinstance(manifold, t3m.Mcomplex):  # closed manifold
@@ -192,20 +226,31 @@ def edge_orientations(manifold):
         for signs in find_orient.cycle_free_orientations(N):
             yield IdealEdgeOrientation(manifold, signs)
 
-def test_sutures(n=100, progress=True):
+def degeneracy_slopes(manifold):
     """
-    # >>> test_sutures(5, False)
+    >>> degeneracy_slopes('m003')
+    []
+    >>> degeneracy_slopes('m004')
+    [(1, 0)]
+    """
+    M = peripheral.Triangulation(manifold)
+    degeneracy_slopes = []
+    for eo in edge_orientations(M):
+        if eo.gives_foliation():
+            degeneracy_slopes.append(eo.degeneracy_slope())
+    return sorted(set(degeneracy_slopes))
+    
+
+def test_cusped(n=100, progress=True):
+    """
+    >>> test_cusped(5, False)
     """
     census = snappy.OrientableCuspedCensus(cusps=1)
     for i in range(n):
-        M = peripheral.Triangulation(census.random())
-        sutures = [eo.sutures() for eo in edge_orientations(M)]
-        if len(sutures):
-            D = sutures[0][0].cellulation
-            mstar, lstar = D.meridian_star, D.longitude_star
-            sutures = [[(mstar(s), lstar(s)) for s in suture] for suture in sutures]
+        M = census.random()
+        ans = degeneracy_slopes(M)
         if progress:
-            print(M.name() + ' ' + repr(sutures))
+            print(M.name() + ' ' + repr(ans))
 
 if __name__ == '__main__':
     import doctest
@@ -213,8 +258,9 @@ if __name__ == '__main__':
     #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
     #orients = edge_orientations(N)
     #[eo.num_sutures() for eo in orients]
-    N = t3m.Mcomplex('m004')
+    N = peripheral.Triangulation('m004')
     orients = edge_orientations(N)
     eo = next(orients)
     C = eo.vertex_link
     s = eo.sutures()
+    ans = eo.link_compatible_with_foliation()
