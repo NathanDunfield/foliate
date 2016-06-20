@@ -3,7 +3,6 @@ Given a triangulation of a 3-manifold, find all orientations of
 the one-skeleton where no triangular face is a directed cycle.
 """
 
-import snappy
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
 from sage.sat.solvers import CryptoMiniSat
@@ -79,7 +78,7 @@ def cycle_free_orientations(triangulation):
     solver.add_clause((1,))
     for sol in all_solutions(solver):
         yield [1 if s else -1 for s in sol[1:]]
-    
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

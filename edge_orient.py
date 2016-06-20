@@ -1,4 +1,4 @@
-import find_orient, link, dual_cellulation, surface
+import find_orient, link, dual_cellulation, surface, peripheral
 import snappy
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
@@ -128,16 +128,18 @@ class IdealEdgeOrientation(EdgeOrientation):
     An orientation on the edges of an ideal triangulation of a
     1-cusped 3-manifold where no face is a directed cycle.
 
-    >>> N = t3m.Mcomplex('v1234')
+    >>> N = peripheral.Triangulation('v1234')
     >>> orients = edge_orientations(N)
     >>> [eo.num_sutures() for eo in orients]
     [2, 2]
     """
-    def __init__(self, mcomplex, link_triangulation, link_dual_cellulation, signs):
-        self.mcomplex, self.signs = mcomplex, signs
-        self.vertex_link = link_triangulation
-        self.link_dual_cellulation = link_dual_cellulation
-        assert len(mcomplex.Vertices) == 1 and mcomplex.Vertices[0].link_genus() == 1
+    def __init__(self, tri_with_peripheral, signs):
+        T = tri_with_peripheral
+        self.mcomplex, self.signs = T.mcomplex, signs
+        self.vertex_link = T.cusp_triangulation
+        self.link_dual_cellulation = T.cusp_dual_cellulation
+        assert len(self.mcomplex.Vertices) == 1
+        assert self.mcomplex.Vertices[0].link_genus() == 1
         self._add_link_vertex_signs()
         
     def sutures(self):
@@ -146,7 +148,7 @@ class IdealEdgeOrientation(EdgeOrientation):
         of the vertex link, each representing one of the sutures
         induced by the corresponding branched surface.
 
-        >>> N = t3m.Mcomplex('m015')
+        >>> N = peripheral.Triangulation('m015')
         >>> orients = edge_orientations(N)
         >>> len([eo.sutures() for eo in orients])
         2
@@ -177,35 +179,26 @@ class IdealEdgeOrientation(EdgeOrientation):
         pass
 
 def edge_orientations(manifold):
-    if isinstance(manifold, t3m.Mcomplex):
+    if isinstance(manifold, t3m.Mcomplex):  # closed manifold
         N = manifold
-        M = None
-    else: # SnapPy manifold
-        M = manifold
-        N = t3m.Mcomplex(M)        
-    if len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0:
+        assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0
         vertex_link = link.LinkSphere(N)
         for signs in find_orient.cycle_free_orientations(N):
             yield EdgeOrientation(N, vertex_link, signs)
-    else:
-        if M is not None:
-            N, vertex_link, dual_cell, (mstar, lstar) = dual_cellulation.peripheral_curve_package(M)
-            dual_cell.meridian_star = mstar
-            dual_cell.longitude_star = lstar
-        else:
-            vertex_link = link.LinkSurface(N)
-            dual_cell  = dual_cellulation.DualCellulation(vertex_link)
+    else: # 1-cusped manifold
+        assert isinstance(manifold, peripheral.Triangulation)
+        N = manifold.mcomplex
         assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 1
         for signs in find_orient.cycle_free_orientations(N):
-            yield IdealEdgeOrientation(N, vertex_link, dual_cell, signs)
+            yield IdealEdgeOrientation(manifold, signs)
 
 def test_sutures(n=100, progress=True):
     """
-    >>> test_sutures(5, False)
+    # >>> test_sutures(5, False)
     """
     census = snappy.OrientableCuspedCensus(cusps=1)
     for i in range(n):
-        M = census.random()
+        M = peripheral.Triangulation(census.random())
         sutures = [eo.sutures() for eo in edge_orientations(M)]
         if len(sutures):
             D = sutures[0][0].cellulation
@@ -214,8 +207,6 @@ def test_sutures(n=100, progress=True):
         if progress:
             print(M.name() + ' ' + repr(sutures))
 
-        
-        
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

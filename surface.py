@@ -305,7 +305,6 @@ class Surface:
         b0 = len(self.vertices) - r1
         b1 = B1.right_kernel().dimension() - B2.rank()
         b2 = B2.right_kernel().dimension()
-        print b0, b1, b2
         assert b0 - b1 + b2 == self.euler()
 
 
@@ -513,20 +512,6 @@ class OneCocycle(Cycle):
         if isinstance(cycle, OneCycle):
             cycle = cycle.weights
         return sum(c*z for c, z in zip(self.weights, cycle))
-
-        
-                
-
-        
-                
-                                
-                
-            
-        
-        
-        
-
-    
         
             
             
@@ -535,21 +520,6 @@ class OneCocycle(Cycle):
 
 
                 
-
-
-
-
-        
-    
-
-
-
-
-
-
-
-
-
 
 
 
