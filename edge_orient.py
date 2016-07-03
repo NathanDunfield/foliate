@@ -4,7 +4,7 @@ import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
                                          ZeroSubsimplices, OneSubsimplices,
                                          RightFace, LeftFace)
-from sage.all import Graph, cached_method, vector
+from sage.all import ZZ, Graph, cached_method, vector, matrix
 
 class EdgeOrientation(object):
     """
@@ -25,6 +25,8 @@ class EdgeOrientation(object):
     False
     >>> eo.gives_foliation()
     True
+    >>> {eo.euler_class_vanishes() for eo in good}
+    set([False, True])
     """
     def __init__(self, mcomplex, link_sphere, signs):
         self.mcomplex, self.signs = mcomplex, signs
@@ -100,6 +102,34 @@ class EdgeOrientation(object):
             if all(self.is_long(c) for c in edge.Corners):
                 return True
         return False
+
+    def euler_cocycle(self):
+        """
+        Assuming self gives a foliation, returns the values of the standard
+        cocycle representing the Euler class evaluated on the dual faces
+        to the given edge.  
+        """
+        cocycle = []
+        for edge in self.mcomplex.Edges:
+            val = 0
+            for c in edge.Corners:
+                tet = c.Tetrahedron
+                e = c.Subsimplex
+                data = {self.local_structure(tet, v) for v in [Head[e], Tail[e]]}
+                if data in [{(2, 1), (0, 3)}, {(3, 0), (1, 2)}]:
+                    val += 1
+            cocycle.append(val * self.signs[edge.Index])
+        assert sum(abs(c) for c in cocycle) == 2*len(self.mcomplex)
+        return cocycle
+
+    def euler_class_vanishes(self):
+        # Let T be self.mcomplex and D be the dual cellulation.  Then
+        # the boundary map C_2(D) -> C_1(D) is the transpose of the
+        # boundary map C_2(T) -> C_1(T).  Which mean the coboundary map
+        # C^1(D) -> C^2(D) is C_2(T) -> C_1(T) on the nose.        
+        d = self.mcomplex.boundary_maps()[1]
+        d = matrix(ZZ, d.nrows(), d.ncols(), d.list())
+        return vector(self.euler_cocycle()) in d.column_module()
 
     def num_sutures(self):
         M = self.mcomplex
@@ -268,15 +298,24 @@ def test_cusped(n=100, tries=1000, progress=True):
         if progress:
             print(M.name() + ' ' + repr(ans))
 
+def has_taut_fol_with_euler_0(spec):
+    N = t3m.Mcomplex(spec)
+    orients = edge_orientations(N)
+    good = [eo for eo in orients if eo.gives_foliation()]
+    return any(eo.euler_class_vanishes() for eo in good)
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
-    #orients = edge_orientations(N)
-    #[eo.num_sutures() for eo in orients]
-    N = peripheral.Triangulation('m004')
+    N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
+    #N = t3m.Mcomplex('kLLLLMQkccfhijhhjijlnacshncljt')
     orients = edge_orientations(N)
-    eo = next(orients)
-    C = eo.vertex_link
-    s = eo.sutures()
-    ans = eo.link_compatible_with_foliation()
+    fol = [eo for eo in orients if eo.gives_foliation()]
+    eo = fol[0]
+    #[eo.num_sutures() for eo in orients]
+    #N = peripheral.Triangulation('m004')
+    #orients = edge_orientations(N)
+    #eo = next(orients)
+    #C = eo.vertex_link
+    #s = eo.sutures()
+    #ans = eo.link_compatible_with_foliation()
