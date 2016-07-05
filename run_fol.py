@@ -8,7 +8,10 @@
 #SBATCH --output=slurm_out/%j
 #SBATCH --error=slurm_error/%j
 
-import taskdb2, snappy, main
+import taskdb2.worker
+import snappy, main
+import snappy.snap.t3mlite as t3m
+import edge_orient
 
 def search_for_taut(task):
     M = snappy.Manifold(task['name'])
@@ -17,6 +20,15 @@ def search_for_taut(task):
         task['taut'] = True
         task['laminar_tri'] = fol.mcomplex.name
         task['done'] = True
-        
-exdb = taskdb2.ExampleDatabase('closed_02')
-exdb.run_function('task_fol', search_for_taut)
+
+def count_taut(task):
+    N = t3m.Mcomplex(str(task['laminar_tri']))
+    laminar_orients = [eo for eo in edge_orient.edge_orientations(N) if eo.gives_foliation]
+    task['laminar_orients'] = repr([eo.signs for eo in laminar_orients]).replace(' ', '')
+    task['taut_euler_0'] = repr([1 if eo.euler_class_vanishes() == 0 else 0 for eo in laminar_orients]).replace(' ', '')
+    task['done'] = True
+
+task = {'name':'m003(-1, 3)', 'laminar_tri':'jLLvMQQcdfigihghihsafroggnw'}
+    
+#exdb = taskdb2.ExampleDatabase('closed_02')
+taskdb2.worker.run_function('QHSpheres', 'task_taut_euler',  count_taut)
