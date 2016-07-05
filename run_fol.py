@@ -23,12 +23,12 @@ def search_for_taut(task):
 
 def count_taut(task):
     N = t3m.Mcomplex(str(task['laminar_tri']))
-    laminar_orients = [eo for eo in edge_orient.edge_orientations(N) if eo.gives_foliation]
+    laminar_orients = [eo for eo in edge_orient.edge_orientations(N) if eo.gives_foliation()]
     task['laminar_orients'] = repr([eo.signs for eo in laminar_orients]).replace(' ', '')
-    task['taut_euler_0'] = repr([1 if eo.euler_class_vanishes() == 0 else 0 for eo in laminar_orients]).replace(' ', '')
+    task['taut_euler_0'] = repr([1 if eo.euler_class_vanishes() else 0 for eo in laminar_orients]).replace(' ', '')
     task['done'] = True
 
-task = {'name':'m003(-1, 3)', 'laminar_tri':'jLLvMQQcdfigihghihsafroggnw'}
+task1 = {'name':'m003(-1, 3)', 'laminar_tri':'jLLvMQQcdfigihghihsafroggnw'}
+task2 = {'name':'o9_34819(5, 1)', 'laminar_tri':'uLALvvLPMQvAQQccbbeilkjpknmqoprrtsstqqnnbmxeonkvtngpfrkkk'}
     
-#exdb = taskdb2.ExampleDatabase('closed_02')
 taskdb2.worker.run_function('QHSpheres', 'task_taut_euler',  count_taut)
