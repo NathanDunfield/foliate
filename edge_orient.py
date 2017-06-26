@@ -4,7 +4,8 @@ import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
                                          ZeroSubsimplices, OneSubsimplices,
                                          RightFace, LeftFace)
-from sage.all import ZZ, Graph, cached_method, vector, matrix
+import networkx as nx
+from sage.all import cached_method
 
 class EdgeOrientation(object):
     """
@@ -26,6 +27,14 @@ class EdgeOrientation(object):
     >>> eo.gives_foliation()
     True
     >>> {eo.euler_class_vanishes() for eo in good}
+    set([True])
+
+    >>> T = t3m.Mcomplex('tLLLLMLLwPMQPkacfihjinmlpmoqrpsrssjkgqqthqkwtvxofsqcaa')
+    >>> orients = list(edge_orientations(T))
+    >>> foliations = [eo for eo in orients if eo.gives_foliation()]
+    >>> len(orients), len(foliations)
+    (55, 30)
+    >>> {eo.euler_class_vanishes() for eo in foliations}
     set([False, True])
     """
     def __init__(self, mcomplex, link_sphere, signs):
@@ -105,21 +114,23 @@ class EdgeOrientation(object):
 
     def euler_cocycle(self):
         """
-        Assuming self gives a foliation, returns the values of the standard
-        cocycle representing the Euler class evaluated on the dual faces
-        to the given edge.  
+        Assuming self gives a foliation, returns the values of the
+        standard cocycle representing the Euler class evaluated on the
+        dual face to the given edge.
         """
         cocycle = []
         for edge in self.mcomplex.Edges:
-            val = 0
+            mixed_count = 0
             for c in edge.Corners:
                 tet = c.Tetrahedron
                 e = c.Subsimplex
                 data = {self.local_structure(tet, v) for v in [Head[e], Tail[e]]}
                 if data in [{(2, 1), (0, 3)}, {(3, 0), (1, 2)}]:
-                    val += 1
+                    mixed_count += 1
+
+            assert mixed_count % 2 == 0
+            val = -mixed_count/2 + 1
             cocycle.append(val * self.signs[edge.Index])
-        assert sum(abs(c) for c in cocycle) == 2*len(self.mcomplex)
         return cocycle
 
     def euler_class_vanishes(self):
@@ -128,20 +139,22 @@ class EdgeOrientation(object):
         # boundary map C_2(T) -> C_1(T).  Which mean the coboundary map
         # C^1(D) -> C^2(D) is C_2(T) -> C_1(T) on the nose.        
         d = self.mcomplex.boundary_maps()[1]
-        d = matrix(ZZ, d.nrows(), d.ncols(), d.list())
-        return vector(self.euler_cocycle()) in d.column_module()
+        cohomology_elem_div = d.pari.matsnf(flag=4)
+        euler = t3m.linalg.Vector(self.euler_cocycle()).pari.Col()
+        elem_div_after_quot_by_euler = d.pari.concat(euler).matsnf(flag=4)
+        return cohomology_elem_div == elem_div_after_quot_by_euler
 
     def num_sutures(self):
         M = self.mcomplex
-        G = Graph()
+        G = nx.Graph()
         for tet in M.Tetrahedra:
             for e in OneSubsimplices:
                 if self.local_structure_edge(tet, e) in [[(0,3), (1,2)], [(2,1), (3,0)]]:
                     i = tet.Class[RightFace[e]].Index
                     j = tet.Class[LeftFace[e]].Index
-                    G.add_edge( (i,j) )
-        assert G.num_verts() == len(M.Faces)
-        return len(G.connected_components())
+                    G.add_edge(i,j)
+        assert G.number_of_nodes() == len(M.Faces)
+        return nx.number_connected_components(G)
 
     def gives_foliation(self):
         if self.has_super_long_edge():
@@ -264,6 +277,8 @@ def degeneracy_slopes(manifold):
     [(1, 0)]
     """
     M = peripheral.Triangulation(manifold)
+
+
     degeneracy_slopes = []
     for eo in edge_orientations(M):
         if eo.gives_foliation():
@@ -307,11 +322,11 @@ def has_taut_fol_with_euler_0(spec):
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
-    #N = t3m.Mcomplex('kLLLLMQkccfhijhhjijlnacshncljt')
-    orients = edge_orientations(N)
+    #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
+    N = t3m.Mcomplex('kLLLLMQkccfhijhhjijlnacshncljt')
+    orients = list(edge_orientations(N))
     fol = [eo for eo in orients if eo.gives_foliation()]
-    eo = fol[0]
+    #eo = fol[0]
     #[eo.num_sutures() for eo in orients]
     #N = peripheral.Triangulation('m004')
     #orients = edge_orientations(N)
@@ -319,3 +334,12 @@ if __name__ == '__main__':
     #C = eo.vertex_link
     #s = eo.sutures()
     #ans = eo.link_compatible_with_foliation()
+
+    def quick_test(N):
+        for _ in range(N):
+            M = snappy.OrientableClosedCensus.random()
+            for filled in util.closed_isosigs(M):
+                N = t3m.Mcomplex(filled)
+                [eo.num_sutures() for eo in edge_orientations(N)]
+                
+                
