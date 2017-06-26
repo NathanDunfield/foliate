@@ -5,8 +5,10 @@ the one-skeleton where no triangular face is a directed cycle.
 
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
+
+# Could easily replace this with e.g. "pycosat" or "pylgl" that are
+# smallish C extensions (esp. pycosat) posted on PyPI.
 from sage.sat.solvers import CryptoMiniSat
-from sage.all import infinity
 
 # -------- t3m preliminaries --------
 

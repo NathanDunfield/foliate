@@ -55,6 +55,22 @@ def cusped_triangulations(snappy_manifold, trys=1000):
         if {len(M.isomorphisms_to(N)) > 0 for N in ans} == {False}:
             ans.append(M.copy())
     return ans
+
+def cusped_isosigs(snappy_manifold, trys=1000):
+    """
+    >>> M = snappy.Manifold('m004')
+    >>> len(cusped_isosigs(M, trys=100))
+    1
+    """
+    M = snappy.Triangulation(snappy_manifold)
+    seen = set()
+    for i in range(trys):
+        isosig = M.triangulation_isosig()
+        isobase = isosig.split('_')[0]
+        if isobase not in seen:
+            seen.add(isobase)
+            yield(isosig)
+        M.randomize()
     
 if __name__ == '__main__':
     import doctest

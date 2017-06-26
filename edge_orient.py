@@ -319,6 +319,20 @@ def has_taut_fol_with_euler_0(spec):
     good = [eo for eo in orients if eo.gives_foliation()]
     return any(eo.euler_class_vanishes() for eo in good)
 
+
+def search_for_persistent(manifold, tries=10):
+    """
+    >>> degeneracy_slopes_with_search('m004', tries=0)
+    ([(1, 0)], ['cPcbbbiht_BaCB'])
+    """
+    manifold = snappy.Triangulation(manifold)
+    slopes, triangulations = list(), list()
+    for M in util.cusped_triangulations(manifold, tries):
+        M = peripheral.Triangulation(M)
+        for eo in edge_orientations(M):
+            if eo.gives_foliation():
+                return eo
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
