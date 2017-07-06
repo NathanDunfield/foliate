@@ -29,8 +29,11 @@ def add_alex(task):
     alex = M.alexander_polynomial()
     task['alex'] = repr(alex).replace(' ', '')
     coeffs = alex.coefficients()
-    if coeffs != (len(coeffs)//2)*[1, -1] + [1]:
+    if (coeffs != (len(coeffs)//2)*[1, -1] + [1] or coeffs == [1] or
+        (coeffs == [1, -1, 1] and len(M.link()) != 3)):
         task['floer_simple'] = False
+    elif :
+        task[
     task['done'] = True
 
 task1 = {'name':'K10a12'}
