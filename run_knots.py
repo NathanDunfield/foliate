@@ -27,4 +27,4 @@ def search_for_persist(task):
 
 task1 = {'name':'K10a12'}
 
-taskdb2.worker.run_function('KnotsInS3', 'task_persist', search_for_persist)
+taskdb2.worker.run_function('KnotsInS3NonAlt15', 'task_persist', search_for_persist)
