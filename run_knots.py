@@ -38,4 +38,5 @@ task2 = {'name':'K7a7'}
 #search_for_persist(task1)
 
 
-taskdb2.worker.run_function('KnotsInS3NonAlt15', 'task_alex', add_alex)
+#taskdb2.worker.run_function('KnotsInS3NonAlt15', 'task_alex', add_alex)
+taskdb2.worker.run_function('KnotsInS3NonAlt16', 'task_persist', search_for_persist)
