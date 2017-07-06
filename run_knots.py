@@ -32,8 +32,6 @@ def add_alex(task):
     if (coeffs != (len(coeffs)//2)*[1, -1] + [1] or coeffs == [1] or
         (coeffs == [1, -1, 1] and len(M.link()) != 3)):
         task['floer_simple'] = False
-    elif :
-        task[
     task['done'] = True
 
 task1 = {'name':'K10a12'}
