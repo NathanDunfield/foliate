@@ -9,7 +9,7 @@
 #SBATCH --error=slurm_error/%j
 
 import taskdb2.worker
-import edge_orient, util, peripheral
+import snappy, edge_orient, util, peripheral
 
 def search_for_persist(task):
     for isosig in util.cusped_isosigs(task['name']):
@@ -23,8 +23,19 @@ def search_for_persist(task):
                     return
         except AssertionError:
             return 
-            
+
+def add_alex(task):
+    M = snappy.Triangulation(task['name'])
+    alex = M.alexander_polynomial()
+    task['alex'] = repr(alex).replace(' ', '')
+    coeffs = alex.coefficients()
+    if coeffs != (len(coeffs)//2)*[1, -1] + [1]:
+        task['floer_simple'] = False
+    task['done'] = True
 
 task1 = {'name':'K10a12'}
+task2 = {'name':'K7a7'}
+#search_for_persist(task1)
 
-taskdb2.worker.run_function('KnotsInS3NonAlt15', 'task_persist', search_for_persist)
+
+taskdb2.worker.run_function('KnotsInS3NonAlt15', 'task_alex', add_alex)
