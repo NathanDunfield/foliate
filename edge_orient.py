@@ -112,6 +112,13 @@ class EdgeOrientation(object):
                 return True
         return False
 
+    def num_super_long_edges(self):
+        ans = 0
+        for edge in self.mcomplex.Edges:
+            if all(self.is_long(c) for c in edge.Corners):
+                ans += 1
+        return ans
+
     def euler_cocycle(self):
         """
         Assuming self gives a foliation, returns the values of the
