@@ -5,7 +5,6 @@ from snappy.snap.t3mlite.simplex import (Head, Tail,
                                          ZeroSubsimplices, OneSubsimplices,
                                          RightFace, LeftFace)
 import networkx as nx
-from sage.all import cached_method
 
 class EdgeOrientation(object):
     """
@@ -14,7 +13,7 @@ class EdgeOrientation(object):
 
     >>> N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
     >>> orients = edge_orientations(N)
-    >>> good = [eo for eo in orients if eo.link_compatible_with_foliation()]
+    >>> good = [eo for eo in orients if eo.num_sutures() == 1]
     >>> len(good)
     8
     >>> [eo(e) for e in N.Edges] == eo.signs
@@ -37,40 +36,14 @@ class EdgeOrientation(object):
     >>> {eo.euler_class_vanishes() for eo in foliations}
     set([False, True])
     """
-    def __init__(self, mcomplex, link_sphere, signs):
+    def __init__(self, mcomplex, signs):
         self.mcomplex, self.signs = mcomplex, signs
-        self.vertex_link = link_sphere
-        assert len(mcomplex.Vertices) == 1 and mcomplex.Vertices[0].link_genus() == 0
-        self._add_link_vertex_signs()
 
     def __call__(self, edge):
         """
         Return the sign self assigns to the given edge.
         """
         return self.signs[edge.Index]
-
-    def _add_link_vertex_signs(self):
-        self.link_vertex_signs = dict()
-        for vert in self.vertex_link.vertices:
-            i = vert.index
-            edge_sign = self.signs[abs(i) - 1]
-            vert_sign = 1 if edge_sign*i > 0 else -1
-            self.link_vertex_signs[vert] = vert_sign
-
-    def link_subgraphs(self):
-        pos, neg = [], []
-        for vert in self.vertex_link.vertices:
-            if self.link_vertex_signs[vert] > 0:
-                pos.append(vert.index)
-            else:
-                neg.append(vert.index)
-        assert {abs(p) for p in pos} == {abs(n) for n in neg}
-        G = self.vertex_link.edge_graph()
-        return G.subgraph(vertices=pos), G.subgraph(vertices=neg)
-
-    def link_compatible_with_foliation(self):
-        pos, neg = self.link_subgraphs()
-        return pos.is_connected() and neg.is_connected()
 
     def local_structure(self, tet, vertex):
         """
@@ -107,10 +80,7 @@ class EdgeOrientation(object):
         tetrahedron is the unique one the runs from the source to the
         sink.
         """
-        for edge in self.mcomplex.Edges:
-            if all(self.is_long(c) for c in edge.Corners):
-                return True
-        return False
+        return self.num_super_long_edges() > 0
 
     def num_super_long_edges(self):
         ans = 0
@@ -164,14 +134,7 @@ class EdgeOrientation(object):
         return nx.number_connected_components(G)
 
     def gives_foliation(self):
-        if self.has_super_long_edge():
-            return False
-
-        ans1 = self.link_compatible_with_foliation()
-        ans2 = self.num_sutures() == 1
-        assert ans1 == ans2
-        return ans1
-    
+        return (not self.has_super_long_edge()) and self.num_sutures() == 1
 
 class IdealEdgeOrientation(EdgeOrientation):
     """
@@ -199,6 +162,25 @@ class IdealEdgeOrientation(EdgeOrientation):
         assert len(self.mcomplex.Vertices) == 1
         assert self.mcomplex.Vertices[0].link_genus() == 1
         self._add_link_vertex_signs()
+
+    def _add_link_vertex_signs(self):
+        self.link_vertex_signs = dict()
+        for vert in self.vertex_link.vertices:
+            i = vert.index
+            edge_sign = self.signs[abs(i) - 1]
+            vert_sign = 1 if edge_sign*i > 0 else -1
+            self.link_vertex_signs[vert] = vert_sign
+
+    def link_subgraphs(self):
+        pos, neg = [], []
+        for vert in self.vertex_link.vertices:
+            if self.link_vertex_signs[vert] > 0:
+                pos.append(vert.index)
+            else:
+                neg.append(vert.index)
+        assert {abs(p) for p in pos} == {abs(n) for n in neg}
+        G = self.vertex_link.edge_graph()
+        return G.subgraph(vertices=pos), G.subgraph(vertices=neg)
 
     def sutures(self):
         """
@@ -238,7 +220,6 @@ class IdealEdgeOrientation(EdgeOrientation):
         D = self.link_dual_cellulation
         return all(D.slope(suture) != 0 for suture in sutures)
 
-    @cached_method
     def gives_foliation(self):
         if self.has_super_long_edge():
             return False
@@ -266,9 +247,8 @@ def edge_orientations(manifold):
     if isinstance(manifold, t3m.Mcomplex):  # closed manifold
         N = manifold
         assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0
-        vertex_link = link.LinkSphere(N)
         for signs in find_orient.cycle_free_orientations(N):
-            yield EdgeOrientation(N, vertex_link, signs)
+            yield EdgeOrientation(N, signs)
     else: # 1-cusped manifold
         assert isinstance(manifold, peripheral.Triangulation)
         N = manifold.mcomplex
