@@ -19,15 +19,14 @@ class EdgeOrientation(object):
     >>> [eo(e) for e in N.Edges] == eo.signs
     True
     >>> tet = N.Tetrahedra[3]
-    >>> [eo.is_long(tet, e) for e in OneSubsimplices]
+    >>> [eo.is_very_long(tet, e) for e in OneSubsimplices]
     [False, False, True, False, False, False]
-    >>> eo.has_super_long_edge()
+    >>> eo.has_sink_edge()
     False
     >>> eo.gives_foliation()
     True
     >>> {eo.euler_class_vanishes() for eo in good}
     set([True])
-
     >>> T = t3m.Mcomplex('tLLLLMLLwPMQPkacfihjinmlpmoqrpsrssjkgqqthqkwtvxofsqcaa')
     >>> orients = list(edge_orientations(T))
     >>> foliations = [eo for eo in orients if eo.gives_foliation()]
@@ -35,9 +34,62 @@ class EdgeOrientation(object):
     (55, 30)
     >>> {eo.euler_class_vanishes() for eo in foliations}
     set([False, True])
+
+    Sanity checks:
+
+    >>> EdgeOrientation(T, len(T.Edges)*[1])
+    Traceback (most recent call last):
+       ...
+    ValueError: EdgeOrientation is not acyclic
+    >>> EdgeOrientation(t3m.Mcomplex('m004'), len(T.Edges)*[1])
+    Traceback (most recent call last):
+       ...
+    ValueError: Some vertex link is not a sphere
+
+    Examples where there are more than one vetex.
+
+    >>> R = t3m.Mcomplex('nLLLwAPLQkcdefhhihklmlmmhsdarkdjselaxj')
+    >>> {eo.strongly_connected() for eo in edge_orientations(R)}
+    set([False])
+
+    >>> Y = t3m.Mcomplex('uLLLMvPzvwPQQQcacfgghimlrnonspsqtttsjkwwjmbxwagoronokvkwr')
+    >>> orients = list(edge_orientations(Y))
+    >>> foliations = [eo for eo in orients if eo.gives_foliation()]
     """
-    def __init__(self, mcomplex, signs):
+    def __init__(self, mcomplex, signs, check=True):
         self.mcomplex, self.signs = mcomplex, signs
+        if not all(v.link_genus()==0 for v in mcomplex.Vertices):
+            raise ValueError('Some vertex link is not a sphere')
+        if check:
+            self._check_acyclic()
+        self._setup_local_structure()
+        
+
+    def _check_acyclic(self):
+        for face in find_orient.oriented_edges_around_faces(self.mcomplex):
+            face_signs = []
+            for e in face:
+                s = 1 if e > 0 else -1
+                face_signs.append(s*self.signs[abs(e) - 1])
+            if face_signs in ([1, 1, 1], [-1, -1, -1]):
+                raise ValueError('EdgeOrientation is not acyclic')
+
+    def _setup_local_structure(self):
+        """
+        The "local_structure[tet, vertex]" attribute records the number of
+        "out" and "in" arrows of the vertex in the given tetrahedra.
+        """
+
+        self.local_structure = local_structure = dict()
+        for tet in self.mcomplex.Tetrahedra:
+            for a in ZeroSubsimplices:
+                out_arrows, in_arrows = 0, 0
+                for (edge, sign) in tet.edge_info[a]:
+                    if sign * self.signs[edge] > 0:
+                        out_arrows += 1
+                    else:
+                        in_arrows += 1
+                local_structure[tet, a] = (out_arrows, in_arrows)
 
     def __call__(self, edge):
         """
@@ -45,23 +97,12 @@ class EdgeOrientation(object):
         """
         return self.signs[edge.Index]
 
-    def local_structure(self, tet, vertex):
-        """
-        Returns the number of "out" and "in" arrows from the given vertex.
-        """
-        a = vertex
-        signs = []
-        for b in ZeroSubsimplices:
-            if b != a:
-                e = tet.Class[a|b]
-                signs.append(self(e) * e.orientation_with_respect_to(tet, a, b))
-        return signs.count(1), signs.count(-1)
 
     def local_structure_edge(self, tet, edge):
-        return sorted([self.local_structure(tet, Head[edge]),
-                       self.local_structure(tet, Tail[edge])])
+        loc_str = self.local_structure
+        return {loc_str[tet, Head[edge]], loc_str[tet, Tail[edge]]}
 
-    def is_long(self, tet_or_corner, edge=None):
+    def is_very_long(self, tet_or_corner, edge=None):
         if edge is None:  # Called with a corner
             tet = tet_or_corner.Tetrahedron
             edge = tet_or_corner.Subsimplex
@@ -69,25 +110,52 @@ class EdgeOrientation(object):
             tet = tet_or_corner
 
         for a in [Head[edge], Tail[edge]]:
-            if 0 not in self.local_structure(tet, a):
+            if 0 not in self.local_structure[tet, a]:
                 return False
         return True
                         
-    def has_super_long_edge(self):
+    def has_sink_edge(self):
         """
-        A super long edge is an edge which is the long edge in every
-        adjacent tetrahedra.  By definition, the long edge in a
-        tetrahedron is the unique one the runs from the source to the
-        sink.
+        In an acyclically oriented tetrahedron, the unique edge that runs
+        from the "source vertex" to the "sink vertex" is called very
+        long.  A sink edge is an edge which is very long in every
+        adjacent tetrahedron.  Such sink edges lead to sink discs in
+        the associated branched surface.
         """
-        return self.num_super_long_edges() > 0
+        return self.num_sink_edges() > 0
 
-    def num_super_long_edges(self):
+    def num_sink_edges(self):
         ans = 0
         for edge in self.mcomplex.Edges:
-            if all(self.is_long(c) for c in edge.Corners):
+            if all(self.is_very_long(c) for c in edge.Corners):
                 ans += 1
         return ans
+
+    def one_skeleton_digraph(self):
+        """
+        Returns the 1-skeleton of the ambient 3-manifold triangulation
+        oriented via self.
+        """
+        T = self.mcomplex
+        G = nx.DiGraph()
+        G.add_nodes_from(T.Vertices)
+        for edge in T.Edges:
+            a, b = edge.Vertices
+            if self(edge) == -1:
+                a, b = b, a
+            G.add_edge(a, b)
+        return G
+            
+    def strongly_connected(self):
+        """
+        An EdgeOrientation is strongly connected if the 1-skeleton is
+        strong connected as a digraph (that is, every vertex can be
+        reached from any other via a directed path) *and* every vertex
+        has a loop.
+        """
+        G = self.one_skeleton_digraph()
+        return (nx.number_strongly_connected_components(G) == 1 and 
+                len(G.nodes_with_selfloops()) == G.number_of_nodes())
 
     def euler_cocycle(self):
         """
@@ -101,7 +169,7 @@ class EdgeOrientation(object):
             for c in edge.Corners:
                 tet = c.Tetrahedron
                 e = c.Subsimplex
-                data = {self.local_structure(tet, v) for v in [Head[e], Tail[e]]}
+                data = {self.local_structure[tet, v] for v in [Head[e], Tail[e]]}
                 if data in [{(2, 1), (0, 3)}, {(3, 0), (1, 2)}]:
                     mixed_count += 1
 
@@ -114,7 +182,8 @@ class EdgeOrientation(object):
         # Let T be self.mcomplex and D be the dual cellulation.  Then
         # the boundary map C_2(D) -> C_1(D) is the transpose of the
         # boundary map C_2(T) -> C_1(T).  Which mean the coboundary map
-        # C^1(D) -> C^2(D) is C_2(T) -> C_1(T) on the nose.        
+        # C^1(D) -> C^2(D) is C_2(T) -> C_1(T) on the nose.
+        assert len(self.mcomplex.Vertices) == 1
         d = self.mcomplex.boundary_maps()[1]
         cohomology_elem_div = d.pari.matsnf(flag=4)
         euler = t3m.linalg.Vector(self.euler_cocycle()).pari.Col()
@@ -126,7 +195,7 @@ class EdgeOrientation(object):
         G = nx.Graph()
         for tet in M.Tetrahedra:
             for e in OneSubsimplices:
-                if self.local_structure_edge(tet, e) in [[(0,3), (1,2)], [(2,1), (3,0)]]:
+                if self.local_structure_edge(tet, e) in [{(0,3), (1,2)}, {(2,1), (3,0)}]:
                     i = tet.Class[RightFace[e]].Index
                     j = tet.Class[LeftFace[e]].Index
                     G.add_edge(i,j)
@@ -134,7 +203,9 @@ class EdgeOrientation(object):
         return nx.number_connected_components(G)
 
     def gives_foliation(self):
-        return (not self.has_super_long_edge()) and self.num_sutures() == 1
+        return (not self.has_sink_edge()
+                and self.num_sutures() == len(self.mcomplex.Vertices)
+                and self.strongly_connected())
 
 class IdealEdgeOrientation(EdgeOrientation):
     """
@@ -161,6 +232,7 @@ class IdealEdgeOrientation(EdgeOrientation):
         self.link_dual_cellulation = T.cusp_dual_cellulation
         assert len(self.mcomplex.Vertices) == 1
         assert self.mcomplex.Vertices[0].link_genus() == 1
+        self._setup_local_structure()
         self._add_link_vertex_signs()
 
     def _add_link_vertex_signs(self):
@@ -221,7 +293,7 @@ class IdealEdgeOrientation(EdgeOrientation):
         return all(D.slope(suture) != 0 for suture in sutures)
 
     def gives_foliation(self):
-        if self.has_super_long_edge():
+        if self.has_sink_edge():
             return False
 
         link_ok = self.link_compatible_with_foliation()
@@ -246,9 +318,8 @@ class IdealEdgeOrientation(EdgeOrientation):
 def edge_orientations(manifold):
     if isinstance(manifold, t3m.Mcomplex):  # closed manifold
         N = manifold
-        assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 0
         for signs in find_orient.cycle_free_orientations(N):
-            yield EdgeOrientation(N, signs)
+            yield EdgeOrientation(N, signs, check=False)
     else: # 1-cusped manifold
         assert isinstance(manifold, peripheral.Triangulation)
         N = manifold.mcomplex
@@ -339,7 +410,7 @@ if __name__ == '__main__':
     def quick_test(N):
         for _ in range(N):
             M = snappy.OrientableClosedCensus.random()
-            for filled in util.closed_isosigs(M):
+            for filled in util.closed_isosigs(M)[:10]:
                 N = t3m.Mcomplex(filled)
                 [eo.num_sutures() for eo in edge_orientations(N)]
                 

@@ -30,7 +30,6 @@ def first_foliation(snappy_manifold, max_triangulations=10):
             for eo in orient:
                 if eo.gives_foliation():
                     return eo
-bad = 'pLALvAzAQzQabcegiklijkmnooobrwbbclhjjnjhxoj_cDbC'
 
 def try_persistent(snappy_manifold):
     Y = snappy_manifold
@@ -54,7 +53,6 @@ def triangles_on_high(regina_tri):
     for F in T.triangles():
         if F.vertex(0) == F.vertex(1) == F.vertex(2) == v:
             return F
-
 
 def obvious_simplify(regina_tri):
     T = regina_tri
@@ -115,37 +113,29 @@ def interesting_two_vertex_triangulation(regina_tri):
                 progress = True
                 break
 
-    simplify_via_randomization(T)
-
-
-
-
-class EdgeOrientation(edge_orient.EdgeOrientation):
-    def __init__(self, mcomplex, signs):
-        self.mcomplex, self.signs = mcomplex, signs
-
-    def gives_foliation(self):
-        if self.has_super_long_edge():
-            return False
-        return self.num_sutures() == len(self.mcomplex.Vertices)
+    obvious_simplify(T)
 
         
 def examine_two_vertex(snappy_manifold):
+    ans = []
     M = snappy_manifold
-    for iso in util.closed_isosigs(M)[:10]:
-        for i in range(10):
+    for iso in util.closed_isosigs(M)[:3]:
+        for i in range(1):
             R = regina.NTriangulation(iso)
             interesting_two_vertex_triangulation(R)
             new_iso = R.isoSig()
             T = t3m.Mcomplex(new_iso)
-            for signs in find_orient.cycle_free_orientations(T):
-                eo = EdgeOrientation(T, signs)
+            print(len(T))
+            for eo in edge_orient.edge_orientations(T):
                 if eo.gives_foliation():
                     print(new_iso, signs)
+    return ans
 
 
 
-
-iso = 'oLLLALAPzQcbedgfjihlkmnlnnxxnxxqaxaxqqnhx'
-R = regina.NTriangulation(iso)
-M = snappy.Manifold('m146(6,1)')
+if __name__ == '__main__':
+    #iso = 'oLLLALAPzQcbedgfjihlkmnlnnxxnxxqaxaxqqnhx'
+    #R = regina.NTriangulation(iso)
+    #M = snappy.Manifold('m146(6,1)')
+    #bad = 'pLALvAzAQzQabcegiklijkmnooobrwbbclhjjnjhxoj_cDbC'
+    M = snappy.Manifold('m231(-6, 1)')

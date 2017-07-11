@@ -30,18 +30,38 @@ from sage.sat.solvers import CryptoMiniSat
 VerticesOfFace = { F0 : (V1, V3, V2), F1 : (V0, V2, V3),
                    F2 : (V0, V3, V1), F3 : (V0, V1, V2) }
 
+def record_orientations_of_edges(triangulation):
+    """
+    As these are used repeatedly, we cache the names and orientations
+    of the global edges as seen from each tetrahedron.
+    """
+    triangulation._edge_info = dict()
+    for tet in triangulation.Tetrahedra:
+        tet.edge_info = dict()
+        for a in ZeroSubsimplices:
+            a_summary = []
+            for b in ZeroSubsimplices:
+                if a != b:
+                    edge = tet.Class[a|b]
+                    sign = edge.orientation_with_respect_to(tet, a, b)
+                    tet.edge_info[a, b] = (edge.Index, sign)
+                    a_summary.append((edge.Index, sign))
+            tet.edge_info[a] = tuple(a_summary)
+
+
 def oriented_edges_around_faces(triangulation):
+    if not hasattr(triangulation, '_edge_info'):
+        record_orientations_of_edges(triangulation)
     ans = []
     for tet in triangulation.Tetrahedra:        
         for vertices in VerticesOfFace.values():
             face = []
             for i in range(3):
                 a, b = vertices[i], vertices[(i+1)%3]
-                edge = tet.Class[a|b]
-                sign = edge.orientation_with_respect_to(tet, a, b)
-                face.append(sign*(edge.Index + 1))
+                edge, sign = tet.edge_info[a, b]
+                face.append(sign*(edge + 1))
             ans.append(face)
-    return ans
+    return ans 
 
 def all_solutions(solver):
     """
