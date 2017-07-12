@@ -55,6 +55,13 @@ class EdgeOrientation(object):
     >>> Y = t3m.Mcomplex('uLLLMvPzvwPQQQcacfgghimlrnonspsqtttsjkwwjmbxwagoronokvkwr')
     >>> orients = list(edge_orientations(Y))
     >>> foliations = [eo for eo in orients if eo.gives_foliation()]
+    >>> len(orients), len(foliations)
+    (115, 0)
+    >>> Z = t3m.Mcomplex('sLLLvLLLQAPQQcdghmljnpmlrqoqoprrhshvxuulhrrptftvgpk')
+    >>> orients = list(edge_orientations(Z))
+    >>> foliations = [eo for eo in orients if eo.gives_foliation()]
+    >>> len(orients), len(foliations)
+    (202, 116)
     """
     def __init__(self, mcomplex, signs, check=True):
         self.mcomplex, self.signs = mcomplex, signs
@@ -393,11 +400,11 @@ def search_for_persistent(manifold, tries=10):
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    #doctest.testmod()
     #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
-    N = t3m.Mcomplex('kLLLLMQkccfhijhhjijlnacshncljt')
-    orients = list(edge_orientations(N))
-    fol = [eo for eo in orients if eo.gives_foliation()]
+    #N = t3m.Mcomplex('kLLLLMQkccfhijhhjijlnacshncljt')
+    #orients = list(edge_orientations(N))
+    #fol = [eo for eo in orients if eo.gives_foliation()]
     #eo = fol[0]
     #[eo.num_sutures() for eo in orients]
     #N = peripheral.Triangulation('m004')

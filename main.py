@@ -13,8 +13,8 @@ def first_foliation_mcomplex(mcomplex):
         if eo.gives_foliation():
             return eo
     
-def first_foliation(snappy_manifold, max_triangulations=10):
-    for iso in util.closed_isosigs(snappy_manifold)[:max_triangulations]:
+def first_foliation(snappy_manifold, rand_max, examine_max):
+    for iso in util.closed_isosigs(snappy_manifold, rand_max)[:examine_max]:
         T = t3m.Mcomplex(iso)
         T.name = iso
         if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:

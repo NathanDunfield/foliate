@@ -15,7 +15,7 @@ import edge_orient
 
 def search_for_taut(task):
     M = snappy.Manifold(task['name'])
-    fol = main.first_foliation(M, 20)
+    fol = main.first_foliation(M, 1000, 1000)
     if fol is not None:
         task['taut'] = True
         task['laminar_tri'] = fol.mcomplex.name
@@ -31,4 +31,4 @@ def count_taut(task):
 task1 = {'name':'m003(-1, 3)', 'laminar_tri':'jLLvMQQcdfigihghihsafroggnw'}
 task2 = {'name':'o9_34819(5, 1)', 'laminar_tri':'uLALvvLPMQvAQQccbbeilkjpknmqoprrtsstqqnnbmxeonkvtngpfrkkk'}
     
-taskdb2.worker.run_function('QHSpheres', 'task_taut_euler',  count_taut)
+taskdb2.worker.run_function('QHSpheres', 'task_fol', search_for_taut)
