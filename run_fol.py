@@ -16,7 +16,7 @@ import edge_orient
 def search_for_taut(task):
     for D in eval(task['descriptions']):
         M = snappy.Manifold(D)
-        fol = main.first_foliation(M, 10000, 5000)
+        fol = main.first_foliation(M, 30000, 40)
         if fol is not None:
             task['taut'] = True
             task['laminar_tri'] = fol.mcomplex.name

@@ -12,7 +12,7 @@ import taskdb2, snappy, main
 
 def search_for_taut(task):
     M = snappy.Manifold(task['isosig'])
-    fol = main.first_foliation(M, 20)
+    fol = main.first_foliation(M, 40)
     if fol is not None:
         task['taut'] = True
         task['laminar_tri'] = fol.mcomplex.name
