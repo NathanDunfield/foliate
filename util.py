@@ -17,7 +17,7 @@ def closed_from_isosig(isosig):
     """
     return t3m.Mcomplex(isosig)
         
-def closed_isosigs(snappy_manifold, trys=20):
+def closed_isosigs(snappy_manifold, trys=20, max_tets=50):
     """
     >>> M = snappy.Manifold('m004(1,2)')
     >>> len(closed_isosigs(M, trys=5)) > 0
@@ -37,7 +37,9 @@ def closed_isosigs(snappy_manifold, trys=20):
         for i in range(trys):
             T = N.filled_triangulation()
             if T._num_fake_cusps() == 1:
-                ans.add((T.num_tetrahedra(), T.triangulation_isosig(decorated=False)))
+                n = T.num_tetrahedra()
+                if n <= max_tets:
+                    ans.add((n, T.triangulation_isosig(decorated=False)))
             N.randomize()
 
     return [iso for n, iso in sorted(ans)]

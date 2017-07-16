@@ -14,11 +14,9 @@ def first_foliation_mcomplex(mcomplex):
             return eo
     
 def first_foliation(snappy_manifold, rand_max, max_size):
-    for iso in util.closed_isosigs(snappy_manifold, rand_max):
+    t = 0
+    for iso in util.closed_isosigs(snappy_manifold, rand_max, max_size):
         T = t3m.Mcomplex(iso)
-        if len(T) > max_size:
-            return 
-        T.name = iso
         if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
             orient = list(edge_orient.edge_orientations(T))
             for eo in orient:
@@ -27,7 +25,6 @@ def first_foliation(snappy_manifold, rand_max, max_size):
 
 def nonorderable(snappy_manifold, max_triangulations=10):
     for iso in util.closed_isosigs(snappy_manifold)[:max_triangulations]:
-        print iso
         T = t3m.Mcomplex(iso)
         T.name = iso
         if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
