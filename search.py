@@ -124,7 +124,7 @@ def interesting_two_vertex_triangulation(regina_tri):
         
 def examine_two_vertex(snappy_manifold):
     M = snappy_manifold
-    for iso in util.closed_isosigs(M,300)[:150]:
+    for iso in util.closed_isosigs(M, 10000, 35):
         for i in range(1):
             R = regina.NTriangulation(iso)
             interesting_two_vertex_triangulation(R)
