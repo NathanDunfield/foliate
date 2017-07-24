@@ -122,14 +122,15 @@ def interesting_two_vertex_triangulation(regina_tri):
     obvious_simplify(T)
 
         
-def examine_two_vertex(snappy_manifold):
+def examine_two_vertex(snappy_manifold, rand_max, max_size):
     M = snappy_manifold
-    for iso in util.closed_isosigs(M, 10000, 35):
+    for iso in util.closed_isosigs(M, rand_max, max_size):
         for i in range(1):
             R = regina.NTriangulation(iso)
             interesting_two_vertex_triangulation(R)
             new_iso = R.isoSig()
             T = t3m.Mcomplex(new_iso)
+            T.name = new_iso
             print(len(T))
             for eo in edge_orient.edge_orientations(T):
                 if eo.gives_foliation():

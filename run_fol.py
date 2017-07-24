@@ -17,7 +17,7 @@ import search
 def search_for_taut(task):
     for D in eval(task['descriptions']):
         M = snappy.Manifold(D)
-        fol = main.first_foliation(M, 10000, 40)
+        fol = main.first_foliation(M, 1000, 40)
         if fol is not None:
             task['taut'] = True
             task['laminar_tri'] = fol.mcomplex.name
@@ -26,7 +26,7 @@ def search_for_taut(task):
 
 def search_for_taut_2_vertex(task):
     M = snappy.Manifold(task['name'])
-    fol = search.examine_two_vertex(M)
+    fol = search.examine_two_vertex(M, 1000, 40)
     if fol is not None:
         task['taut'] = True
         task['laminar_tri'] = fol.mcomplex.name
