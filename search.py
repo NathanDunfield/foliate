@@ -134,7 +134,7 @@ def examine_two_vertex(snappy_manifold):
             for eo in edge_orient.edge_orientations(T):
                 if eo.gives_foliation():
                     print(M, new_iso, eo.signs)
-                    return 
+                    return eo
 
 def basic_examine_two_vertex(iso):
     R = regina.NTriangulation(iso)
