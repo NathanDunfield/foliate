@@ -2,9 +2,9 @@ from setuptools import setup, Extension
 from Cython.Build import cythonize
 import os, shutil
 
-regina_root = '/usr/'
-include_dirs = [regina_root + '/include/regina-normal', '/usr/include/libxml2']
-extra_link_args = ['-lxml2', '-lgmp', '-lregina-engine']
+regina_root = '/usr/local/'
+include_dirs = [regina_root + 'include/regina', '/usr/include/libxml2']
+extra_link_args = ['-lregina-engine']
 
 pyregina_ext = Extension('pyregina',
                          sources=['pyregina.pyx'],
@@ -15,7 +15,7 @@ pyregina_ext = Extension('pyregina',
 
 setup(
     name='pyregina',
-    version='0.1',
+    version='0.2',
     ext_modules=cythonize(pyregina_ext)
 )
 
