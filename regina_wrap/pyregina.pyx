@@ -20,9 +20,16 @@ cdef extern from "triangulation/dim3.h" namespace "regina":
         bint retriangulate(int, unsigned int, void*, function[bint(NTriangulation&)])
         string isoSig()
 
+_global_action_isosigs = set()
+_global_action_config = {'print':True}
+
 cdef bint action(NTriangulation& triangulation):
     if not triangulation.simplifyToLocalMinimum(False):
-        print(triangulation.isoSig())
+        isosig = triangulation.isoSig()
+        n = int(triangulation.countTetrahedra())
+        if _global_action_config['print']:
+            print(isosig)
+        _global_action_isosigs.add((n, isosig))
         
 def version():
     return "%d.%d" % (versionMajor(), versionMinor())
@@ -35,7 +42,9 @@ cdef class Triangulation:
     """
     cdef NTriangulation* triangulation
 
-    def __cinit__(self, spec=None):
+    def __cinit__(self, spec):
+        if not isinstance(spec, str):
+            spec = spec._to_string()
         self.triangulation = new NTriangulation(spec)
 
     def __dealloc__(self):
@@ -51,9 +60,10 @@ cdef class Triangulation:
     def isosig(self):
         return self.triangulation.isoSig()
 
-    def retriangulate(self, height, threads=1):
-        cdef int nthreads
-        nthreads = threads
+    def retriangulate(self, height, print_each_isosig=False):
+        _global_action_isosigs.clear()
+        _global_action_config['print'] = print_each_isosig
         cdef function[bint(NTriangulation&)] *callback
         callback = new function[bint(NTriangulation&)](action)
-        self.triangulation.retriangulate(height, nthreads, NULL, callback[0])
+        self.triangulation.retriangulate(height, 1, NULL, callback[0])
+        return _global_action_isosigs
