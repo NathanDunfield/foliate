@@ -1,6 +1,6 @@
 import snappy
 import snappy.snap.t3mlite as t3m
-import pyregina
+import pyregina, regina
 
 def to_iso(snappy_manifold):
     M = snappy_manifold
@@ -38,7 +38,17 @@ def fancy_closed_isosigs(snappy_manifold, height):
             print('Already found %s' % iso)
     return sorted(isosigs)
 
-    
+def two_vertex_tris(snappy_manifold, height=0):
+    M = snappy_manifold.filled_triangulation()
+    T = regina.NTriangulation(M._to_string())
+    t = T.tetrahedra()[0]
+    T.oneFourMove(t)
+    isosig = T.isoSig()
+    P = pyregina.Triangulation(isosig)
+    isosigs = P.retriangulate(height)
+    return isosigs
+
+        
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

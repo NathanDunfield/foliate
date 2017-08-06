@@ -15,6 +15,7 @@ cdef extern from "triangulation/dim3.h" namespace "regina":
         NTriangulation()
         NTriangulation(string)
         unsigned long countTetrahedra()
+        unsigned long countVertices()
         bint intelligentSimplify()
         bint simplifyToLocalMinimum(bint perform)
         bint retriangulate(int, unsigned int, void*, function[bint(NTriangulation&)])
@@ -24,7 +25,7 @@ _global_action_isosigs = set()
 _global_action_config = {'print':True}
 
 cdef bint action(NTriangulation& triangulation):
-    if not triangulation.simplifyToLocalMinimum(False):
+    if triangulation.simplifyToLocalMinimum(False):
         isosig = triangulation.isoSig()
         n = int(triangulation.countTetrahedra())
         if _global_action_config['print']:
@@ -51,7 +52,10 @@ cdef class Triangulation:
         del self.triangulation
             
     def num_tetrahedra(self):
-        return self.triangulation.countTetrahedra()
+        return int(self.triangulation.countTetrahedra())
+
+    def num_vertices(self):
+        return int(self.triangulation.countVertices())
 
     def simplify(self):
         cdef bint did_simplify = self.ntriangulation.intelligentSimplify()
