@@ -1,14 +1,17 @@
 """
 Given a triangulation of a 3-manifold, find all orientations of
 the one-skeleton where no triangular face is a directed cycle.
+
+You need to have either the "pycosat" Python package or Sage's
+interface to "cryptominisat" installed. I recommend the former since
+it's much easier to install.  There is also "pylgl" which I didn't
+try.
+
 """
 
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
 
-# Could easily replace this with e.g. "pycosat" or "pylgl" that are
-# smallish C extensions (esp. pycosat) posted on PyPI.
-from sage.sat.solvers import CryptoMiniSat
 
 # -------- t3m preliminaries --------
 
@@ -79,19 +82,20 @@ def all_solutions(solver):
             clause = [-i if s else i for i, s in enumerate(solution)]
             solver.add_clause(tuple(clause[1:]))
 
-def cycle_free_orientations(triangulation):
+def cycle_free_orientations_cryptominisat(triangulation):
     """
     Returns all orientations of the one-skeleton where no triangular
     face is a directed cycle.  Orientations are given relative to the
     default orientation as a sequence of 1's and -1's.
 
     >>> M = t3m.Mcomplex('jLvMLQQbfefgihhiixiptvvvgof')
-    >>> list(cycle_free_orientations(M))
+    >>> list(cycle_free_orientations(M, 'cryptominisat'))
     []
     >>> M = t3m.Mcomplex('jLvLQAQbffghghiiieuaiikktuu')
-    >>> len(list(cycle_free_orientations(M)))
+    >>> len(list(cycle_free_orientations(M, 'cryptominisat')))
     10
     """
+    from sage.sat.solvers import CryptoMiniSat
     solver = CryptoMiniSat()
     for face_data in oriented_edges_around_faces(triangulation):
         solver.add_clause(face_data)
@@ -100,6 +104,72 @@ def cycle_free_orientations(triangulation):
     solver.add_clause((1,))
     for sol in all_solutions(solver):
         yield [1 if s else -1 for s in sol[1:]]
+
+def cycle_free_orientations_picosat(triangulation):
+    """
+    Returns all orientations of the one-skeleton where no triangular
+    face is a directed cycle.  Orientations are given relative to the
+    default orientation as a sequence of 1's and -1's.
+
+    >>> M = t3m.Mcomplex('jLvMLQQbfefgihhiixiptvvvgof')
+    >>> list(cycle_free_orientations(M, 'picosat'))
+    []
+    >>> M = t3m.Mcomplex('jLvLQAQbffghghiiieuaiikktuu')
+    >>> len(list(cycle_free_orientations(M, 'picosat')))
+    10
+    """
+    import pycosat
+    clauses = oriented_edges_around_faces(triangulation)
+    # By symmetry, can assume the first edge is positively oriented.
+    clauses.append([1])
+    for sol in pycosat.itersolve(clauses):
+        yield [1 if s > 0 else -1 for s in sol]
+
+def cycle_free_orientations(triangulation, method='picosat'):
+    if method=='picosat':
+        return cycle_free_orientations_picosat(triangulation)
+    elif method=='cryptominisat':
+        return cycle_free_orientations_cryptominisat(triangulation)
+    else:
+        raise ValueError("Method must be either 'picosat' or 'cryptominisat'")
+
+def compare_solvers():
+    """
+    Both picosat and cryptominisat work great for this task.  For
+    triangulations with < 20 tetrahedra, cryptominisat seems to have a
+    slight edge, but for larger examples picosat starts to win out,
+    quite possibly just because it implements "itersolve" on the C
+    side.
+
+    """
+    
+    import snappy
+    import time
+    pico, crypto = 0, 0
+    #for M in snappy.DodecahedralOrientableClosedCensus:
+    for M in snappy.OrientableCuspedCensus(cusps=1):
+        M.dehn_fill((2, 5))
+    
+        F = M.filled_triangulation()
+        F.simplify()
+        iso = F.triangulation_isosig(decorated=False)
+        T = t3m.Mcomplex(iso)
+        if len(T) > 35:
+            continue
+        print(iso)
+          
+        start = time.time()
+        pico_ans = list(cycle_free_orientations_picosat(T))
+        pico += time.time() - start
+
+        start = time.time()
+        crypto_ans = list(cycle_free_orientations_cryptominisat(T))
+        crypto += time.time() - start
+
+        assert sorted(pico_ans) == sorted(crypto_ans)
+        print("num tet: %d totals: %.4f pico vs %.4f crypo" %
+              (len(T), pico, crypto))
+        
 
 if __name__ == '__main__':
     import doctest

@@ -20,7 +20,7 @@ class EdgeOrientation(object):
     True
     >>> tet = N.Tetrahedra[3]
     >>> [eo.is_very_long(tet, e) for e in OneSubsimplices]
-    [False, False, True, False, False, False]
+    [True, False, False, False, False, False]
     >>> eo.has_sink_edge()
     False
     >>> eo.gives_foliation()
