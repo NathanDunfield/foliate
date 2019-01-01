@@ -162,7 +162,7 @@ class EdgeOrientation(object):
         """
         G = self.one_skeleton_digraph()
         return (nx.number_strongly_connected_components(G) == 1 and 
-                len(G.nodes_with_selfloops()) == G.number_of_nodes())
+                len(list(nx.nodes_with_selfloops(G))) == G.number_of_nodes())
 
     def euler_cocycle(self):
         """
