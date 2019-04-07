@@ -1,7 +1,7 @@
 import sys, getopt
 import doctest
 
-import dual_cellulation, edge_orient, find_orient, link, peripheral, util
+from . import dual_cellulation, edge_orient, find_orient, link, peripheral, util
 modules = [dual_cellulation, edge_orient, find_orient, link, peripheral, util]
 
 def verbose():
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     for module in modules:
         print(module.__name__)
         result = doctest.testmod(module,
-                                 extraglobs= doctest_globals(module),
+                                 extraglobs=doctest_globals(module),
                                  verbose=verbose())
         print(4*' ' + repr(result))
         failed += result.failed

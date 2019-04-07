@@ -1,7 +1,6 @@
 import snappy
 import snappy.snap.t3mlite as t3m
-import link
-import dual_cellulation
+from . import link, dual_cellulation
 from sage.all import matrix, vector, ZZ
 
 def peripheral_curve_from_snappy(dual_cell, snappy_data):
@@ -41,7 +40,7 @@ def peripheral_curve_package(snappy_manifold):
     4. two 1-cocycles on the dual cellulation which are
     *algebraically* dual to the peripheral framming of M.
     """
-    M = snappy_manifold
+    M = snappy_manifold.copy()
     assert M.num_cusps() == 1
     N = t3m.Mcomplex(M)
     C = link.LinkSurface(N)
@@ -58,35 +57,17 @@ def peripheral_curve_package(snappy_manifold):
     lstar = dual_cellulation.OneCocycle(D, list(B[1]))
     AA = matrix([[mstar(meridian), lstar(meridian)], [mstar(longitude), lstar(longitude)]])
     assert AA == 1
+
+    # Now add references to C, D, etc. to N for easy of use later
+    N.cusp_triangulation = C
+    N.cusp_dual_cellulation = D
+    D.meridian, D.longitude = meridian, longitude
+    D.meridian_star, D.longitude_star = mstar, lstar
+    N.original_triangulation = snappy_manifold
+    def slope(onecycle):
+        return vector([D.meridian_star(onecycle), D.longitude_star(onecycle)])
+    D.slope = slope
     return N, C, D, (mstar, lstar)
-
-class Triangulation(snappy.Triangulation):
-    """
-    A 1-cusped manifold with an attached t3m.Mcomplex and various cusp
-    data.
-
-    >>> M = Triangulation('m004')
-    >>> M.homology()
-    Z
-    >>> len(M.mcomplex)
-    2
-    >>> M.cusp_triangulation.homology_test()
-    >>> M.cusp_dual_cellulation.euler()
-    0
-    """
-    def __init__(self, spec=None):
-        snappy.Triangulation.__init__(self, spec)
-        if spec is not None:
-            assert self.cusp_info('is_complete') == [True]
-            data = peripheral_curve_package(self)
-            self.mcomplex = data[0]
-            self.cusp_triangulation = data[1]
-            self.cusp_dual_cellulation = D = data[2]
-            D.meridian_star = data[3][0]
-            D.longitude_star = data[3][1]
-            def slope(onecycle):
-                return vector([D.meridian_star(onecycle), D.longitude_star(onecycle)])
-            D.slope = slope
             
 def test_peripheral_curves(n=100, progress=True):
     """
@@ -97,7 +78,7 @@ def test_peripheral_curves(n=100, progress=True):
         M = census.random()
         if progress:
             print(M.name())
-        Triangulation(M)
+        peripheral_curve_package(M)
         
 if __name__ == '__main__':
     import doctest

@@ -1,4 +1,4 @@
-import find_orient, link, dual_cellulation, surface, peripheral, util
+from . import find_orient, link, dual_cellulation, surface, peripheral, util
 import snappy
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import (Head, Tail,
@@ -219,11 +219,11 @@ class IdealEdgeOrientation(EdgeOrientation):
     An orientation on the edges of an ideal triangulation of a
     1-cusped 3-manifold where no face is a directed cycle.
 
-    >>> N = peripheral.Triangulation('v1234')
+    >>> N = snappy.Triangulation('v1234')
     >>> orients = edge_orientations(N)
     >>> [eo.num_sutures() for eo in orients]
     [2, 2]
-    >>> N = peripheral.Triangulation('m016')
+    >>> N = snappy.Triangulation('m016')
     >>> list(edge_orientations(N))
     []
 
@@ -232,11 +232,12 @@ class IdealEdgeOrientation(EdgeOrientation):
     degeneracy slope gives a manifold with a co-orientable taut
     foliation.
     """
-    def __init__(self, tri_with_peripheral, signs):
-        self.triangulation = T = tri_with_peripheral
-        self.mcomplex, self.signs = T.mcomplex, signs
-        self.vertex_link = T.cusp_triangulation
-        self.link_dual_cellulation = T.cusp_dual_cellulation
+    def __init__(self, mcomplex, signs):
+        self.triangulation = T = mcomplex.original_triangulation
+        self.signs = signs
+        self.mcomplex = mcomplex
+        self.vertex_link = mcomplex.cusp_triangulation
+        self.link_dual_cellulation = mcomplex.cusp_dual_cellulation
         assert len(self.mcomplex.Vertices) == 1
         assert self.mcomplex.Vertices[0].link_genus() == 1
         self._setup_local_structure()
@@ -267,7 +268,7 @@ class IdealEdgeOrientation(EdgeOrientation):
         of the vertex link, each representing one of the sutures
         induced by the corresponding branched surface.
 
-        >>> M = peripheral.Triangulation('m015')
+        >>> M = snappy.Triangulation('m015')
         >>> orients = edge_orientations(M)
         >>> len([eo.sutures() for eo in orients])
         2
@@ -308,7 +309,7 @@ class IdealEdgeOrientation(EdgeOrientation):
 
     def degeneracy_slope(self):
         """
-        >>> M = peripheral.Triangulation('m004')
+        >>> M = snappy.Triangulation('m004')
         >>> orients = edge_orientations(M)
         >>> [eo.degeneracy_slope() for eo in orients]
         [(1, 0), (1, 0)]
@@ -328,11 +329,10 @@ def edge_orientations(manifold):
         for signs in find_orient.cycle_free_orientations(N):
             yield EdgeOrientation(N, signs, check=False)
     else: # 1-cusped manifold
-        assert isinstance(manifold, peripheral.Triangulation)
-        N = manifold.mcomplex
+        N = peripheral.peripheral_curve_package(manifold)[0]
         assert len(N.Vertices) == 1 and N.Vertices[0].link_genus() == 1
         for signs in find_orient.cycle_free_orientations(N):
-            yield IdealEdgeOrientation(manifold, signs)
+            yield IdealEdgeOrientation(N, signs)
 
 def degeneracy_slopes(manifold):
     """
@@ -341,9 +341,7 @@ def degeneracy_slopes(manifold):
     >>> degeneracy_slopes('m004')
     [(1, 0)]
     """
-    M = peripheral.Triangulation(manifold)
-
-
+    M = snappy.Triangulation(manifold)
     degeneracy_slopes = []
     for eo in edge_orientations(M):
         if eo.gives_foliation():
@@ -358,7 +356,6 @@ def degeneracy_slopes_with_search(manifold, tries=1000):
     manifold = snappy.Triangulation(manifold)
     slopes, triangulations = list(), list()
     for M in util.cusped_triangulations(manifold, tries):
-        M = peripheral.Triangulation(M)
         for eo in edge_orientations(M):
             if eo.gives_foliation():
                 slope = eo.degeneracy_slope()
@@ -393,7 +390,6 @@ def search_for_persistent(manifold, tries=10):
     manifold = snappy.Triangulation(manifold)
     slopes, triangulations = list(), list()
     for M in util.cusped_triangulations(manifold, tries):
-        M = peripheral.Triangulation(M)
         for eo in edge_orientations(M):
             if eo.gives_foliation():
                 return eo
@@ -407,7 +403,6 @@ if __name__ == '__main__':
     #fol = [eo for eo in orients if eo.gives_foliation()]
     #eo = fol[0]
     #[eo.num_sutures() for eo in orients]
-    #N = peripheral.Triangulation('m004')
     #orients = edge_orientations(N)
     #eo = next(orients)
     #C = eo.vertex_link

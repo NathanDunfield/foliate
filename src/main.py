@@ -1,8 +1,6 @@
-import edge_orient
 import snappy
 import snappy.snap.t3mlite as t3m
-import pandas as pd
-import util
+from . import util, edge_orient
 
 def has_compatible_foliation(snappy_manifold):
     ans = first_foliation(snappy_manifold)
@@ -14,6 +12,22 @@ def first_foliation_mcomplex(mcomplex):
             return eo
     
 def first_foliation(snappy_manifold, rand_max, max_size):
+    """
+    Given a SnapPy Manifold which is closed, searches for a taut
+    foliation as certified as a by a foliar orientation. The
+    parameters are:
+
+    * rand_max: controls the amount of randomization used to search
+      for different triangulations.
+
+    * max_size: bounds the number of tetrahedra of any triangulation
+      that will be examined in detail.
+
+    >>> M = snappy.Manifold('m004(1, 2)')
+    >>> eo = first_foliation(M, 5, 25)
+    >>> eo.give_foliation()
+    True
+    """
     t = 0
     for iso in util.closed_isosigs(snappy_manifold, rand_max, max_size):
         T = t3m.Mcomplex(iso)
@@ -24,6 +38,10 @@ def first_foliation(snappy_manifold, rand_max, max_size):
                     return eo
 
 def nonorderable(snappy_manifold, max_triangulations=10):
+    """
+    A quick test for nonorderability which makes the *assumption* that
+    all edges of the triangualtions are homotopy esssential.
+    """
     for iso in util.closed_isosigs(snappy_manifold)[:max_triangulations]:
         T = t3m.Mcomplex(iso)
         T.name = iso
@@ -38,38 +56,3 @@ def nonorderable(snappy_manifold, max_triangulations=10):
                     
             
 
-def make_fol_file():
-    file = open('/tmp/foliation_info.csv', 'w')
-    file.write('name,taut,good_tri\n')
-    for M in snappy.OrientableClosedCensus:
-        fol = first_foliation(M, 10)
-        if fol is None:
-            file.write('"%s",0,\n' % M)
-        else:
-            file.write('"%s",1,"%s"\n' % (M, fol.mcomplex.name))
-        file.flush()
-
-def make_disorder_file():
-    file = open('/tmp/orderable_info.csv', 'w')
-    file.write('name,orderable,good_tri\n')
-    for M in snappy.OrientableClosedCensus:
-        ans = nonorderable(M, 100)
-        if ans is None:
-            file.write('"%s",0,\n' % M)
-        else:
-            file.write('"%s",-1,"%s"\n' % (M, ans))
-        file.flush()
-
-
-def compare_data():
-    dh = pd.read_csv('/Users/dunfield/h/derived_data/combined_data_2014_3_12.csv')
-    df = pd.read_csv('foliation_info.csv')
-    da = dh.merge(df, on='name')[['name', 'L_space', 'taut']]
-    bad = da[(da.L_space==1)&(da.taut)]
-    assert len(bad) == 0
-    return da
-
-def repeatibility():
-    for M in snappy.OrientableClosedCensus[:100]:
-        print M, {M.filled_triangulation().triangulation_isosig() for i in range(100)}
-            

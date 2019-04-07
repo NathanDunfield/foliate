@@ -21,7 +21,7 @@ anticlockwise when viewed from outside.
 
 import snappy.snap.t3mlite as t3m
 from snappy.snap.t3mlite.simplex import *
-import surface
+from . import surface
 from sage.all import Graph, cached_method
 
 # The vertices of the small triangular faces of the truncated tetrahedron 

@@ -89,10 +89,10 @@ def cycle_free_orientations_cryptominisat(triangulation):
     default orientation as a sequence of 1's and -1's.
 
     >>> M = t3m.Mcomplex('jLvMLQQbfefgihhiixiptvvvgof')
-    >>> list(cycle_free_orientations(M, 'cryptominisat'))
+    >>> list(cycle_free_orientations(M, 'cryptominisat'))  # doctest: +SKIP
     []
     >>> M = t3m.Mcomplex('jLvLQAQbffghghiiieuaiikktuu')
-    >>> len(list(cycle_free_orientations(M, 'cryptominisat')))
+    >>> len(list(cycle_free_orientations(M, 'cryptominisat'))) # doctest: +SKIP
     10
     """
     from sage.sat.solvers import CryptoMiniSat
