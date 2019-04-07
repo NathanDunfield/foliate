@@ -41,6 +41,12 @@ Note here that m003 is Floer simple and hence nothing is found.
 For many more useable examples, see the docstrings the files
 "src/main.py" and "src/edge_orient.py".
 
+Data
+====
+
+The file "foliar_tris/persistent_knots.csv.bz2" contains the
+persistent foliar orientations for some 1.2 million knot exteriors.
+
 Todo
 ====
 
