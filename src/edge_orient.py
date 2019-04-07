@@ -336,6 +336,9 @@ def edge_orientations(manifold):
 
 def degeneracy_slopes(manifold):
     """
+    Finds all persistently foliar orientations on the given
+    triangulation and returns a list of their degeneracy slopes.
+
     >>> degeneracy_slopes('m003')
     []
     >>> degeneracy_slopes('m004')

@@ -25,7 +25,12 @@ def first_foliation(snappy_manifold, rand_max, max_size):
 
     >>> M = snappy.Manifold('m004(1, 2)')
     >>> eo = first_foliation(M, 5, 25)
-    >>> eo.give_foliation()
+    >>> eo.gives_foliation()
+    True
+
+    >>> M = snappy.Manifold('m003(-3, 1)')
+    >>> eo = first_foliation(M, 5, 25)
+    >>> eo is None
     True
     """
     t = 0

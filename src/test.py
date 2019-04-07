@@ -1,8 +1,8 @@
 import sys, getopt
 import doctest
 
-from . import dual_cellulation, edge_orient, find_orient, link, peripheral, util
-modules = [dual_cellulation, edge_orient, find_orient, link, peripheral, util]
+from . import dual_cellulation, edge_orient, find_orient, link, peripheral, util, main
+modules = [dual_cellulation, edge_orient, find_orient, link, peripheral, util, main]
 
 def verbose():
     try:
