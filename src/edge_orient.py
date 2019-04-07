@@ -397,6 +397,17 @@ def search_for_persistent(manifold, tries=10):
             if eo.gives_foliation():
                 return eo
 
+def is_persistent_tri(manifold):
+    """
+    >>> M = snappy.Manifold('m016')
+    >>> is_persistent_tri(M) is None
+    True
+    """
+    M = snappy.Triangulation(manifold)
+    for eo in edge_orientations(M):
+        if eo.gives_foliation():
+            return eo
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

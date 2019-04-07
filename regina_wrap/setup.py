@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 from Cython.Build import cythonize
 import os, shutil
 
-regina_root = '/usr/local/'
+regina_root = '/sage/local/'
 include_dirs = [regina_root + 'include/regina', '/usr/include/libxml2']
 extra_link_args = ['-lregina-engine']
 

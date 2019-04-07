@@ -7,19 +7,19 @@ examine for foliar orientations.
 import snappy
 import snappy.snap.t3mlite as t3m
 import pyregina, regina
+import foliar
 
 def to_iso(snappy_manifold):
     M = snappy_manifold
     return (M.num_tetrahedra(), M.triangulation_isosig(decorated=False))
         
-def fancy_closed_isosigs(snappy_manifold, height):
+def fancy_closed_isosigs(snappy_manifold, height, print_starts=True):
     """
-    >> M = snappy.Manifold('m004(1,2)')
-    >> len(fancy_closed_isosigs(M,0)) > 0
+    >>> M = snappy.Manifold('m004(1,2)')
+    >>> len(fancy_closed_isosigs(M,1, print_starts=False)) > 0
     True
     """
     M = snappy_manifold.copy()
-    assert M.cusp_info('complete?') == [False]
     starts = set()
 
     for i in range(10):
@@ -37,7 +37,9 @@ def fancy_closed_isosigs(snappy_manifold, height):
     
     for n, iso in starts:
         if (n, iso) not in isosigs:
-            print('Starting massive search from %s' % iso)
+            isosigs.add((n, iso))
+            if print_starts:
+                print('Starting massive search from %s' % iso)
             T = pyregina.Triangulation(iso)
             isosigs.update(T.retriangulate(max_tets - n))
         else:
@@ -54,7 +56,34 @@ def two_vertex_tris(snappy_manifold, height=0):
     isosigs = P.retriangulate(height)
     return isosigs
 
-        
+def first_foliation(snappy_manifold, height=0, print_starts=True):
+    """
+    >>> M = snappy.Manifold('m004(1,2)')
+    >>> eo = first_foliation(M, height=0, print_starts=False)
+    >>> eo.gives_foliation()
+    True
+    """
+    sigs = fancy_closed_isosigs(snappy_manifold, height, print_starts)
+    if print_starts:
+        print('Found %d distinct triangulations' % len(sigs))
+    for n, iso in sigs:
+        T = t3m.Mcomplex(iso)
+        T.name = iso
+        if len(T.Vertices) == 1 and T.Vertices[0].link_genus() == 0:
+            orient = list(foliar.edge_orientations(T))
+            for eo in orient:
+                if eo.gives_foliation():
+                    return eo
+
+def first_persisent(snappy_manifold, height=0):
+    sigs = fancy_closed_isosigs(snappy_manifold, height)
+    print('Found %d distinct triangulations' % len(sigs))
+    for n, iso in sigs:
+        ans = edge_orient.is_persistent_tri(iso)
+        if ans is not None:
+            return ans
+
+                
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    print(doctest.testmod())
