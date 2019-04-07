@@ -41,3 +41,8 @@ Note here that m003 is Floer simple and hence nothing is found.
 For many more useable examples, see the docstrings the files
 "src/main.py" and "src/edge_orient.py".
 
+Todo
+====
+
+It would not be hard to merge the code here into SnapPy proper, and so
+this should be done.
