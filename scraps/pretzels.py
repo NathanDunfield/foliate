@@ -1,4 +1,4 @@
-import nsagetools, main, snappy, edge_orient
+import nsagetools, foliar, snappy, edge_orient
 T = snappy.RationalTangle
 
 def pretzel_link(a, b, c):
@@ -28,7 +28,7 @@ def have_taut_foliation(M, fillings):
     for slope in fillings:
         N = M.copy()
         N.dehn_fill(slope)
-        F = main.first_foliation(N)
+        F = foliar.first_foliation(N)
         if F is not None:
             print(slope)
             ans.append(slope)

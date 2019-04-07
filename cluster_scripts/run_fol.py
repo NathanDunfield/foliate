@@ -9,7 +9,7 @@
 #SBATCH --error=slurm_error/%j
 
 import taskdb2.worker
-import snappy, main
+import snappy, foliar
 import snappy.snap.t3mlite as t3m
 import edge_orient
 import search
@@ -17,7 +17,7 @@ import search
 def search_for_taut(task):
     for D in eval(task['descriptions']):
         M = snappy.Manifold(D)
-        fol = main.first_foliation(M, 1000, 40)
+        fol = foliar.first_foliation(M, 1000, 40)
         if fol is not None:
             task['taut'] = True
             task['laminar_tri'] = fol.mcomplex.name

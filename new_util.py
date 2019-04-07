@@ -1,3 +1,9 @@
+"""
+This module uses the "pyregina" interface from the "regina_wrap"
+subdirectory to try to get a broader collection of triangulations to
+examine for foliar orientations.
+"""
+
 import snappy
 import snappy.snap.t3mlite as t3m
 import pyregina, regina

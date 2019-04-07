@@ -400,7 +400,7 @@ def search_for_persistent(manifold, tries=10):
 
 if __name__ == '__main__':
     import doctest
-    #doctest.testmod()
+    doctest.testmod()
     #N = t3m.Mcomplex('jLLvQPQcdfhghigiihshhgfifme')
     #N = t3m.Mcomplex('kLLLLMQkccfhijhhjijlnacshncljt')
     #orients = list(edge_orientations(N))

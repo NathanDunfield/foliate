@@ -9,7 +9,7 @@
 #SBATCH --error=slurm_error/%j
 
 import taskdb2.worker
-import snappy, main
+import snappy
 import snappy.snap.t3mlite as t3m
 from edge_orient import EdgeOrientation
 

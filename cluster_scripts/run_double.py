@@ -8,11 +8,11 @@
 #SBATCH --output=slurm_out/%j
 #SBATCH --error=slurm_error/%j
 
-import taskdb2, snappy, main
+import taskdb2, snappy, foliar
 
 def search_for_taut(task):
     M = snappy.Manifold(task['isosig'])
-    fol = main.first_foliation(M, 40)
+    fol = foliar.first_foliation(M, 40)
     if fol is not None:
         task['taut'] = True
         task['laminar_tri'] = fol.mcomplex.name
