@@ -2,7 +2,7 @@ from libcpp.string cimport string
 from libcpp.functional cimport function
 import os, sys, re, tempfile
 
-cdef extern from "engine.h" namespace "regina":
+cdef extern from "core/engine.h" namespace "regina":
     cdef int versionMajor()
     cdef int versionMinor()
 

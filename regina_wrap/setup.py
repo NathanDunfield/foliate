@@ -9,7 +9,7 @@ extra_link_args = ['-lregina-engine']
 pyregina_ext = Extension('pyregina',
                          sources=['pyregina.pyx'],
                          language='c++',
-                         extra_compile_args=['-std=c++11', '-Wno-sign-compare',
+                         extra_compile_args=['-std=c++14', '-Wno-sign-compare',
                                              '-Wno-reorder'],
                          include_dirs=include_dirs,
                          extra_link_args=extra_link_args)
