@@ -1,7 +1,6 @@
-import edge_orient, find_orient
+from foliar import edge_orient, find_orient, util
 import snappy
 import snappy.snap.t3mlite as t3m
-import util
 from collections import Counter
 import regina
 import random
@@ -54,8 +53,8 @@ def examine_two_vertex(snappy_manifold, rand_max, max_size):
     for iso in util.closed_isosigs(M, rand_max, max_size):
         for i in range(1):
             R = regina.NTriangulation(iso)
-            interesting_two_vertex_triangulation(R)
-            new_iso = R.isoSig()
+            util.interesting_two_vertex_triangulation(R)
+            new_iso = str(R.isoSig())
             T = t3m.Mcomplex(new_iso)
             T.name = new_iso
             print(len(T))
@@ -66,8 +65,8 @@ def examine_two_vertex(snappy_manifold, rand_max, max_size):
 
 def basic_examine_two_vertex(iso):
     R = regina.NTriangulation(iso)
-    interesting_two_vertex_triangulation(R)
-    new_iso = R.isoSig()
+    util.interesting_two_vertex_triangulation(R)
+    new_iso = str(R.isoSig())
     T = t3m.Mcomplex(new_iso)
     print new_iso
     for eo in edge_orient.edge_orientations(T):
