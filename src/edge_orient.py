@@ -16,6 +16,7 @@ class EdgeOrientation(object):
     >>> good = [eo for eo in orients if eo.num_sutures() == 1]
     >>> len(good)
     8
+    >>> eo = good[-1]
     >>> [eo(e) for e in N.Edges] == eo.signs
     True
     >>> tet = N.Tetrahedra[3]
@@ -26,14 +27,14 @@ class EdgeOrientation(object):
     >>> eo.gives_foliation()
     True
     >>> {eo.euler_class_vanishes() for eo in good}
-    set([True])
+    {True}
     >>> T = t3m.Mcomplex('tLLLLMLLwPMQPkacfihjinmlpmoqrpsrssjkgqqthqkwtvxofsqcaa')
     >>> orients = list(edge_orientations(T))
     >>> foliations = [eo for eo in orients if eo.gives_foliation()]
     >>> len(orients), len(foliations)
     (55, 30)
     >>> {eo.euler_class_vanishes() for eo in foliations}
-    set([False, True])
+    {False, True}
 
     Sanity checks:
 
@@ -50,7 +51,7 @@ class EdgeOrientation(object):
 
     >>> R = t3m.Mcomplex('nLLLwAPLQkcdefhhihklmlmmhsdarkdjselaxj')
     >>> {eo.strongly_connected() for eo in edge_orientations(R)}
-    set([False])
+    {False}
 
     >>> Y = t3m.Mcomplex('uLLLMvPzvwPQQQcacfgghimlrnonspsqtttsjkwwjmbxwagoronokvkwr')
     >>> orients = list(edge_orientations(Y))
@@ -181,7 +182,7 @@ class EdgeOrientation(object):
                     mixed_count += 1
 
             assert mixed_count % 2 == 0
-            val = -mixed_count/2 + 1
+            val = -mixed_count//2 + 1
             cocycle.append(val * self.signs[edge.Index])
         return cocycle
 
