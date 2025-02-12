@@ -328,15 +328,8 @@ class Surface:
     @cached_method
     def integral_cohomology_basis(self, dimension=1):
         C = self.cochain_complex()
-        from sage.interfaces.chomp import have_chomp
-        if have_chomp():
-            if C.betti(1) != 0:
-                ans = C.homology(generators=True)[1][1]
-            else:
-                ans = []
-        else:
-            homology = C.homology(generators=True, algorithm='no_chomp')[dimension]
-            ans = [factor[1].vector(dimension) for factor in homology]
+        homology = C.homology(generators=True, algorithm='no_chomp')[dimension]
+        ans = [factor[1].vector(dimension) for factor in homology]
 
         if dimension == 1:
             assert len(ans) == 2 - self.euler()
@@ -346,15 +339,8 @@ class Surface:
     @cached_method
     def integral_homology_basis(self, dimension=1):
         C = self.chain_complex()
-        from sage.interfaces.chomp import have_chomp
-        if have_chomp():
-            if C.betti(1) != 0:
-                ans = C.homology(generators=True)[1][1]
-            else:
-                ans = []
-        else:
-            homology = C.homology(generators=True, algorithm='no_chomp')[dimension]
-            ans = [factor[1].vector(dimension) for factor in homology]
+        homology = C.homology(generators=True)[dimension]
+        ans = [factor[1].vector(dimension) for factor in homology]
 
         if dimension == 1:
             assert len(ans) == 2 - self.euler()
